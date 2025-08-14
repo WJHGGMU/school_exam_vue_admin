@@ -1,12 +1,30 @@
 <template>
   <div class="app-container">
-    <!-- 搜索和添加按钮区域 -->
+    <!-- 筛选和添加按钮区域 -->
     <div class="header-container">
-      <el-input
-        v-model="filterText"
-        placeholder="输入关键字进行筛选.."
-        class="search-input"
+      <el-cascader
+        v-model="selectedOrg"
+        :options="filteredOrgData"
+        :props="cascaderProps"
+        clearable
+        placeholder="请选择所属组织"
+        class="org-filter"
+        @change="applyFilter"
       />
+      <el-select
+        v-model="selectedExamType"
+        placeholder="请选择考试类型"
+        class="type-filter"
+        clearable
+        @change="applyFilter"
+      >
+        <el-option
+          v-for="item in examTypeOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        ></el-option>
+      </el-select>
       <el-button type="primary" icon="el-icon-plus" @click="handleAddExam" class="add-button">
         新建考试
       </el-button>
@@ -146,7 +164,7 @@
               </div>
               <div class="meta-item">
                 <i class="el-icon-building"></i>
-                <span>所属组织：{{ exam.organization }}</span>
+                <span>所属组织：{{ exam.organization_name }}</span>
               </div>
             </div>
           </div>
@@ -174,7 +192,7 @@ export default {
   data() {
     return {
       data2: [],
-      filterText: '',
+      filteredOrgData: [], // 用于筛选的组织数据（非grade类型标记为禁用）
       examList: [],
       filteredExamList: [],
       addExamDialogVisible: false,
@@ -207,7 +225,10 @@ export default {
         label: 'label',
         checkStrictly: true,
         emitPath: false
-      }
+        // 禁用逻辑已移至数据处理中
+      },
+      selectedOrg: null, // 选中的组织
+      selectedExamType: null // 选中的考试类型
     }
   },
   computed: {
@@ -221,9 +242,6 @@ export default {
     this.fetchExamList()
   },
   watch: {
-    filterText(val) {
-      this.applyFilter()
-    },
     // 监听窗口大小变化
     '$route'(to, from) {
       this.handleResize()
@@ -249,10 +267,33 @@ export default {
           headers: { Authorization: `Bearer ${token}` }
         })
         this.data2 = this.clearLeafChildren(res)
+        // 复制数据并处理非grade类型的禁用状态
+        this.filteredOrgData = this.processOrgDataForFilter(this.data2)
       } catch (e) {
         console.error(e)
         this.$message.error('加载数据失败')
       }
+    },
+    // 处理组织数据，为非grade类型添加disabled: true
+    processOrgDataForFilter(orgData) {
+      // 深拷贝数据避免影响原始数据
+      const data = JSON.parse(JSON.stringify(orgData))
+
+      const processNode = (node) => {
+        // 如果不是grade类型，标记为禁用
+        if (node.org_type !== 'grade') {
+          node.disabled = true
+        }
+
+        // 递归处理子节点
+        if (node.children && node.children.length > 0) {
+          node.children = node.children.map(child => processNode(child))
+        }
+
+        return node
+      }
+
+      return data.map(node => processNode(node))
     },
     clearLeafChildren(arr) {
       return arr.map(item => {
@@ -275,7 +316,7 @@ export default {
           }
         })
         this.examList = Array.isArray(response) ? response : []
-        this.filteredExamList = this.examList
+        this.applyFilter() // 初始加载时应用筛选
       } catch (error) {
         console.error('获取考试列表失败：', error)
         this.$message.error('加载考试数据失败，请重试')
@@ -284,14 +325,19 @@ export default {
       }
     },
     applyFilter() {
-      if (!this.filterText) {
-        this.filteredExamList = this.examList
-        return
+      let result = [...this.examList]
+
+      // 按组织筛选
+      if (this.selectedOrg) {
+        result = result.filter(exam => exam.organization === this.selectedOrg)
       }
-      const filtered = this.examList.filter(exam =>
-        exam.name.toLowerCase().includes(this.filterText.toLowerCase())
-      )
-      this.filteredExamList = filtered
+
+      // 按考试类型筛选
+      if (this.selectedExamType) {
+        result = result.filter(exam => exam.exam_type === this.selectedExamType)
+      }
+
+      this.filteredExamList = result
     },
     formatExamType(type) {
       const typeMap = {
@@ -373,7 +419,7 @@ export default {
             headers: { Authorization: `Bearer ${token}` }
           })
           this.examList = this.examList.filter(item => item.id !== exam.id)
-          this.filteredExamList = this.filteredExamList.filter(item => item.id !== exam.id)
+          this.applyFilter() // 删除后重新应用筛选
           this.$message.success('删除成功')
         } catch (e) {
           console.error(e)
@@ -433,10 +479,85 @@ export default {
   margin-bottom: 16px;
   width: 100%;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
-.search-input {
+.org-filter {
   flex: 1;
+  min-width: 200px;
+}
+
+.type-filter {
+  width: 200px;
+  min-width: 150px;
+}
+
+.add-button {
+  white-space: nowrap;
+}
+
+/* 其他样式保持不变 */
+.form-container {
+  width: 100%;
+}
+
+.form-control {
+  width: 100%;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  padding-top: 16px;
+}
+
+::v-deep .list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+::v-deep .card-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 16px 20px;
+  border: 1px solid #f0f2f5;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 基础样式 */
+.app-container {
+  padding: 16px;
+  box-sizing: border-box;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* 头部容器样式 */
+.header-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  width: 100%;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.org-filter {
+  flex: 1;
+  min-width: 200px;
+}
+
+.type-filter {
+  width: 200px;
+  min-width: 150px;
 }
 
 .add-button {
@@ -596,8 +717,9 @@ export default {
     gap: 8px;
   }
 
-  .search-input, .add-button {
+  .org-filter, .type-filter, .add-button {
     width: 100%;
+    min-width: auto;
   }
 
   .add-button {

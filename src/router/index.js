@@ -60,7 +60,7 @@ export const constantRoutes = [
         path: 'index',
         name: 'ExamList',
         component: () => import('@/views/form/index'),
-        meta: { title: '考试列表' }
+        meta: { title: '考试列表' },
       },
       {
         path: 'paper/:id',
