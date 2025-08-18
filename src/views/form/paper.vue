@@ -79,18 +79,18 @@
         <div class="image-section">
           <h3>答题卡图片</h3>
           <div class="image-container">
-            <!-- 首页图片 -->
+            <!-- 首页图片 - 仅显示图片，不绑定画布 -->
             <div v-if="currentPaper.answers_parse_image_file1" class="image-item with-controls">
               <div class="image-header">
                 <p>首页</p>
                 <div class="image-controls">
                   <el-button
                     type="primary"
-                    :icon="isEditingPositioning && editingPositioningType === 'positioning1' ? 'el-icon-check' : 'el-icon-edit'"
-                    @click="handleEditPositioning('positioning1')"
+                    icon="el-icon-edit"
+                    @click="openPositioningDialog('positioning1')"
                     size="mini"
                   >
-                    {{ isEditingPositioning && editingPositioningType === 'positioning1' ? '确认定位' : '编辑定位' }}
+                    编辑定位
                   </el-button>
                   <div class="position-status" :class="currentPaper.positioning1_enabled ? 'confirmed' : 'unconfirmed'">
                     {{ currentPaper.positioning1_enabled ? '定位已确认' : '定位未确认' }}
@@ -98,49 +98,36 @@
                 </div>
               </div>
 
-              <!-- 图片与Canvas重叠容器 -->
-              <div class="image-canvas-container">
-                <el-image
-                  :src="currentPaper.answers_parse_image_file1"
-                  fit="contain"
-                  :preview-src-list="[currentPaper.answers_parse_image_file1]"
-                  class="base-image"
-                  ref="image1"
-                  @load="onImageLoad('image1')"
-                >
-                  <div slot="error" class="image-placeholder">
-                    <i class="el-icon-picture-outline"></i>
-                  </div>
-                </el-image>
-
-                <!-- 始终显示定位框，根据状态变化样式 -->
-                <ImageCanvas
-                  :src="currentPaper.answers_parse_image_file1"
-                  v-model="currentPaper.positioning1"
-                  :image-ref="'image1'"
-                  :is-editing="isEditingPositioning && editingPositioningType === 'positioning1'"
-                  :is-confirmed="currentPaper.positioning1_enabled"
-                  @position-updated="handlePositionUpdated"
-                />
-              </div>
+              <!-- 仅显示图片 -->
+              <el-image
+                :src="currentPaper.answers_parse_image_file1"
+                fit="contain"
+                :preview-src-list="[currentPaper.answers_parse_image_file1]"
+                class="base-image"
+                ref="detailImage1"
+              >
+                <div slot="error" class="image-placeholder">
+                  <i class="el-icon-picture-outline"></i>
+                </div>
+              </el-image>
             </div>
             <div v-else class="image-placeholder">
               <i class="el-icon-picture-outline"></i>
               <p>未上传图片1</p>
             </div>
 
-            <!-- 尾页图片 -->
+            <!-- 尾页图片 - 仅显示图片，不绑定画布 -->
             <div v-if="currentPaper.answers_parse_image_file2" class="image-item with-controls">
               <div class="image-header">
                 <p>尾页</p>
                 <div class="image-controls">
                   <el-button
                     type="primary"
-                    :icon="isEditingPositioning && editingPositioningType === 'positioning2' ? 'el-icon-check' : 'el-icon-edit'"
-                    @click="handleEditPositioning('positioning2')"
+                    icon="el-icon-edit"
+                    @click="openPositioningDialog('positioning2')"
                     size="mini"
                   >
-                    {{ isEditingPositioning && editingPositioningType === 'positioning2' ? '确认定位' : '编辑定位' }}
+                    编辑定位
                   </el-button>
                   <div class="position-status" :class="currentPaper.positioning2_enabled ? 'confirmed' : 'unconfirmed'">
                     {{ currentPaper.positioning2_enabled ? '定位已确认' : '定位未确认' }}
@@ -148,31 +135,18 @@
                 </div>
               </div>
 
-              <!-- 图片与Canvas重叠容器 -->
-              <div class="image-canvas-container">
-                <el-image
-                  :src="currentPaper.answers_parse_image_file2"
-                  fit="contain"
-                  :preview-src-list="[currentPaper.answers_parse_image_file2]"
-                  class="base-image"
-                  ref="image2"
-                  @load="onImageLoad('image2')"
-                >
-                  <div slot="error" class="image-placeholder">
-                    <i class="el-icon-picture-outline"></i>
-                  </div>
-                </el-image>
-
-                <!-- 始终显示定位框，根据状态变化样式 -->
-                <ImageCanvas
-                  :src="currentPaper.answers_parse_image_file2"
-                  v-model="currentPaper.positioning2"
-                  :image-ref="'image2'"
-                  :is-editing="isEditingPositioning && editingPositioningType === 'positioning2'"
-                  :is-confirmed="currentPaper.positioning2_enabled"
-                  @position-updated="handlePositionUpdated"
-                />
-              </div>
+              <!-- 仅显示图片 -->
+              <el-image
+                :src="currentPaper.answers_parse_image_file2"
+                fit="contain"
+                :preview-src-list="[currentPaper.answers_parse_image_file2]"
+                class="base-image"
+                ref="detailImage2"
+              >
+                <div slot="error" class="image-placeholder">
+                  <i class="el-icon-picture-outline"></i>
+                </div>
+              </el-image>
             </div>
             <div v-else class="image-placeholder">
               <i class="el-icon-picture-outline"></i>
@@ -217,17 +191,53 @@
         </div>
       </div>
       <div slot="footer" class="dialog-footer">
-        <!-- 定位编辑模式下显示不同的按钮 -->
-        <template v-if="isEditingPositioning">
-          <el-button @click="cancelEditPositioning">取消编辑</el-button>
-          <el-button type="success" @click="savePositioning">保存定位</el-button>
-        </template>
-        <template v-else>
-          <el-button @click="detailDialogVisible = false">关闭</el-button>
-          <el-button type="warning" icon="el-icon-edit" @click="handleEditFromDetail">编辑</el-button>
-        </template>
+        <el-button @click="detailDialogVisible = false">关闭</el-button>
+        <el-button type="warning" icon="el-icon-edit" @click="handleEditFromDetail">编辑</el-button>
       </div>
     </el-dialog>
+
+   <!-- 定位编辑弹窗 -->
+   <el-dialog
+     :title="`编辑${editingPositioningType === 'positioning1' ? '首页' : '尾页'}定位`"
+     :visible.sync="positioningDialogVisible"
+     width="90%"
+     custom-class="positioning-dialog"
+     :body-style="{padding: 0}"
+   >
+     <!-- 外层滚动容器 -->
+     <div class="original-size-container" ref="scrollBox">
+       <!-- 图片包装器，用于精确计算尺寸 -->
+       <div class="image-wrapper" ref="imageWrapper">
+         <!-- 1. 原始尺寸图片（仅做底图展示） -->
+         <el-image
+           ref="oriImg"
+           :src="currentPositioningImage"
+           fit="none"
+           class="original-image"
+           @load="onImgLoaded"
+         >
+           <div slot="error" class="image-placeholder">
+             <i class="el-icon-picture-outline"></i>
+           </div>
+         </el-image>
+
+         <!-- 2. 与之同尺寸的可交互画布 -->
+         <ImageCanvas
+           :key="currentPositioningImage"
+           :src="currentPositioningImage"
+           v-model="currentPositioningData"
+           :natural="true"
+           class="canvas-overlay"
+           ref="imageCanvas"
+         />
+       </div>
+     </div>
+
+     <div slot="footer" class="dialog-footer">
+       <el-button @click="cancelPositioningEdit">取消</el-button>
+       <el-button type="success" @click="confirmPositioningEdit">确定</el-button>
+     </div>
+   </el-dialog>
 
     <!-- 新建试卷弹窗 -->
     <el-dialog
@@ -260,13 +270,18 @@
           <el-upload
             class="upload-demo"
             action="#"
-            :auto-upload="false"
+            :limit="1"
+            accept=".docx"
+            :on-exceed="handleFileExceed"
             :on-preview="handlePreview"
             :file-list="addTopicPaperFileList"
             :before-upload="beforeUpload"
-            @change="handleAddFileChange('topic', $event)"
+            :auto-upload="false"
+            :on-change="(file, fileList) => handleAddFileChange('topic', file, fileList)"
           >
-            <el-button slot="trigger" type="primary">选取文件</el-button>
+            <div class="upload-button-group">
+              <el-button slot="trigger" type="primary" size="mini">选取文件</el-button>
+            </div>
             <div slot="tip" class="el-upload__tip">可选，支持上传 doc、docx 等格式文件</div>
           </el-upload>
         </el-form-item>
@@ -274,13 +289,18 @@
           <el-upload
             class="upload-demo"
             action="#"
+            :limit="1"
+            accept=".docx"
             :auto-upload="false"
+            :on-exceed="handleFileExceed"
             :on-preview="handlePreview"
             :file-list="addAnswerCardFileList"
             :before-upload="beforeUpload"
-            @change="handleAddFileChange('answer', $event)"
+            :on-change="(file, fileList) => handleAddFileChange('answer', file, fileList)"
           >
-            <el-button slot="trigger" type="primary">选取文件</el-button>
+            <div class="upload-button-group">
+              <el-button slot="trigger" type="primary" size="mini">选取文件</el-button>
+            </div>
             <div slot="tip" class="el-upload__tip">可选，支持上传 doc、docx 等格式文件</div>
           </el-upload>
         </el-form-item>
@@ -288,13 +308,18 @@
           <el-upload
             class="upload-demo"
             action="#"
+            :limit="1"
+            accept=".docx"
             :auto-upload="false"
+            :on-exceed="handleFileExceed"
             :on-preview="handlePreview"
             :file-list="addStandardAnswerFileList"
             :before-upload="beforeUpload"
-            @change="handleAddFileChange('standard', $event)"
+            :on-change="(file, fileList) => handleAddFileChange('standard', file, fileList)"
           >
-            <el-button slot="trigger" type="primary">选取文件</el-button>
+            <div class="upload-button-group">
+              <el-button slot="trigger" type="primary" size="mini">选取文件</el-button>
+            </div>
             <div slot="tip" class="el-upload__tip">可选，支持上传 doc、docx 等格式文件</div>
           </el-upload>
         </el-form-item>
@@ -335,13 +360,19 @@
           <el-upload
             class="upload-demo"
             action="#"
+            :limit="1"
+            accept=".docx"
             :auto-upload="false"
+            :on-exceed="handleFileExceed"
             :on-preview="handlePreview"
             :file-list="topicPaperFileList"
             :before-upload="beforeUpload"
-            @change="handleFileChange('topic', $event)"
+            :on-change="(file, fileList) => handleFileChange('topic', file, fileList)"
           >
-            <el-button slot="trigger" type="primary">选取文件</el-button>
+            <div class="upload-button-group">
+              <el-button slot="trigger" type="primary" size="mini">选取文件</el-button>
+              <el-button type="success" @click.stop="uploadTopicFile" size="mini">上传文件</el-button>
+            </div>
             <div slot="tip" class="el-upload__tip">可选，支持上传 doc、docx 等格式文件</div>
           </el-upload>
         </el-form-item>
@@ -349,13 +380,19 @@
           <el-upload
             class="upload-demo"
             action="#"
+            :limit="1"
+            accept=".docx"
+            :on-exceed="handleFileExceed"
             :auto-upload="false"
             :on-preview="handlePreview"
             :file-list="answerCardFileList"
             :before-upload="beforeUpload"
-            @change="handleFileChange('answer', $event)"
+            :on-change="(file, fileList) => handleFileChange('answer', file, fileList)"
           >
-            <el-button slot="trigger" type="primary">选取文件</el-button>
+            <div class="upload-button-group">
+              <el-button slot="trigger" type="primary" size="mini">选取文件</el-button>
+              <el-button type="success" @click.stop="uploadAnswerFile" size="mini">上传文件</el-button>
+            </div>
             <div slot="tip" class="el-upload__tip">可选，支持上传 doc、docx 等格式文件</div>
           </el-upload>
         </el-form-item>
@@ -363,13 +400,19 @@
           <el-upload
             class="upload-demo"
             action="#"
+            :limit="1"
+            accept=".docx"
             :auto-upload="false"
+            :on-exceed="handleFileExceed"
             :on-preview="handlePreview"
             :file-list="standardAnswerFileList"
             :before-upload="beforeUpload"
-            @change="handleFileChange('standard', $event)"
+            :on-change="(file, fileList) => handleFileChange('standard', file, fileList)"
           >
-            <el-button slot="trigger" type="primary">选取文件</el-button>
+            <div class="upload-button-group">
+              <el-button slot="trigger" type="primary" size="mini">选取文件</el-button>
+              <el-button type="success" @click.stop="uploadStandardFile" size="mini">上传文件</el-button>
+            </div>
             <div slot="tip" class="el-upload__tip">可选，支持上传 doc、docx 等格式文件</div>
           </el-upload>
         </el-form-item>
@@ -400,12 +443,15 @@ export default {
       detailDialogVisible: false,
       currentPaper: {},
 
-      // 定位编辑相关
-      isEditingPositioning: false,
+      // 定位编辑弹窗相关
+      positioningDialogVisible: false,
       editingPositioningType: '', // 'positioning1' 或 'positioning2'
+      currentPositioningImage: '',
+      currentPositioningData: [],
+      tempPositioningData: [], // 临时存储编辑中的定位数据
+      isPositioningFullscreen: false,
       imageDimensions: {
-        image1: { width: 0, height: 0 },
-        image2: { width: 0, height: 0 }
+        positioningImage: { width: 0, height: 0 }
       },
 
       // 编辑相关
@@ -466,7 +512,12 @@ export default {
       },
       dialogWidth: '80vw',
       isFullscreen: false,
-      labelWidth: '120px'
+      labelWidth: '120px',
+      addUploadedFiles: {
+            topic: null,
+            answer: null,
+            standard: null
+          }
     }
   },
   async created() {
@@ -488,6 +539,56 @@ export default {
     window.removeEventListener('resize', this.handleResize)
   },
   methods: {
+    handleFileExceed(files, fileList) {
+          this.$message.warning(`只能选择一个文件!`);
+        },
+    onImgLoaded() {
+      // 强制重新计算滚动区域和图片尺寸
+      this.$nextTick(() => {
+        const box = this.$refs.scrollBox;
+        const img = this.$refs.oriImg.$el.querySelector('img');
+        const canvas = this.$refs.imageCanvas;
+        const wrapper = this.$refs.imageWrapper;
+
+        if (box && img) {
+          // 清除图片可能存在的变换
+          img.style.transform = 'none';
+          img.style.objectFit = 'none';
+
+          // 记录图片原始尺寸
+          const naturalWidth = img.naturalWidth;
+          const naturalHeight = img.naturalHeight;
+
+          // 强制设置图片尺寸为原始尺寸
+          img.style.width = `${naturalWidth}px`;
+          img.style.height = `${naturalHeight}px`;
+
+          // 确保包装器尺寸与图片一致
+          if (wrapper) {
+            wrapper.style.width = `${naturalWidth}px`;
+            wrapper.style.height = `${naturalHeight}px`;
+          }
+
+          // 同步画布尺寸与图片尺寸
+          if (canvas && typeof canvas.setSize === 'function') {
+            canvas.setSize(naturalWidth, naturalHeight);
+          }
+
+          // 触发容器重绘，确保滚动区域正确计算
+          box.style.display = 'none';
+          box.offsetHeight; // 触发重排
+          box.style.display = 'block';
+
+          // 强制滚动到左上角
+          box.scrollTop = 0;
+          box.scrollLeft = 0;
+
+          // 确保没有其他样式影响
+          box.style.padding = '0';
+          box.style.margin = '0';
+        }
+      });
+    },
     handleResize() {
       const windowWidth = window.innerWidth
       if (windowWidth < 768) {
@@ -675,23 +776,21 @@ export default {
       this.$message.info(`预览文件：${file.name}`)
     },
 
-    // 编辑文件变化处理
-    handleFileChange(type, { file, fileList }) {
-      // 确保fileList始终是数组
-      const files = fileList || [];
 
-      // 当用户删除文件时
-      if (file && file.status === 'removed') {
+    // 编辑文件变化处理 - 修复核心
+    handleFileChange(type, file, fileList) {
+      console.log(file)
+      console.log(fileList)
+      // 始终保留最后一个有效的文件（过滤已移除的文件）
+      const validFiles = (fileList || []).filter(f => f.status !== 'removed');
+
+      if (validFiles.length > 0) {
+        // 优先取 raw 文件（el-upload 中用户选择的原始文件）
+        this.uploadedFiles[type] = validFiles[validFiles.length - 1].raw;
+        console.log(`文件已选择: ${validFiles[validFiles.length - 1].name}`);
+      } else {
         this.uploadedFiles[type] = null;
-      }
-      // 当有新文件添加时（只保留最后一个选择的文件）
-      else if (files.length > 0) {
-        const latestFile = files[files.length - 1];
-        this.uploadedFiles[type] = latestFile.raw || null;
-      }
-      // 当文件列表为空时
-      else {
-        this.uploadedFiles[type] = null;
+        console.log('文件已移除');
       }
 
       // 更新文件列表显示
@@ -702,23 +801,30 @@ export default {
         image1: 'answerImage1FileList',
         image2: 'answerImage2FileList'
       }
-      this[fileListMap[type]] = [...files];
+      this[fileListMap[type]] = [...fileList];
     },
 
-    // 新增文件变化处理
-    handleAddFileChange(type, { file, fileList }) {
+
+    handleAddFileChange(type, file, fileList) {
+      console.log(567)
+      console.log(file)
       const fileListMap = {
-        topic: 'addTopicPaperFileList',
-        answer: 'addAnswerCardFileList',
-        standard: 'addStandardAnswerFileList',
-        image1: 'addAnswerImage1FileList',
-        image2: 'addAnswerImage2FileList'
+        'topic': 'addTopicPaperFileList',
+        'answer': 'addAnswerCardFileList',
+        'standard': 'addStandardAnswerFileList'
       }
       this[fileListMap[type]] = [...fileList]
+
+      if (fileList.length > 0 && file.raw) {
+        this.addUploadedFiles[type] = file.raw;
+      } else {
+        this.addUploadedFiles[type] = null;
+      }
     },
 
     // 文档上传前验证
     beforeUpload(file) {
+      console.log(123)
       const fileExtensions = ['doc', 'docx', 'pdf'];
       const ext = file.name.split('.').pop().toLowerCase();
       if (!fileExtensions.includes(ext)) {
@@ -736,91 +842,163 @@ export default {
       return true;
     },
 
-    // 图片上传前验证
-    beforeImageUpload(file) {
-      const fileExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-      const ext = file.name.split('.').pop().toLowerCase();
-      if (!fileExtensions.includes(ext)) {
-        this.$message.error('只支持上传 jpg、jpeg、png、gif 格式的图片');
-        return false;
+    // 上传试卷文件 - 添加调试日志
+    async uploadTopicFile() {
+      console.log('尝试上传试卷文件:', this.uploadedFiles.topic);
+
+      // 直接从文件列表获取文件作为备选方案
+      const validFile = this.topicPaperFileList.find(f => f.status !== 'removed');
+      const fileToUpload = this.uploadedFiles.topic || (validFile ? validFile.raw : null);
+
+      if (!fileToUpload) {
+        this.$message.warning('请先选择要上传的试卷文件');
+        return;
       }
 
-      // 限制图片大小为5MB
-      const maxSize = 5 * 1024 * 1024;
-      if (file.size > maxSize) {
-        this.$message.error('图片大小不能超过5MB');
-        return false;
+      try {
+        const token = Cookies.get('access');
+        const formData = new FormData();
+        formData.append('topic_paper_file', fileToUpload);
+
+        const res = await request({
+          url: `/sexam/testpapers/${this.editForm.id}/`,
+          method: 'patch',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          data: formData
+        });
+
+        this.$message.success('试卷文件上传成功');
+        this.editForm.topic_paper_file = res.topic_paper_file;
+        this.topicPaperFileList = this.parseFileInfo(res.topic_paper_file, '试卷');
+        this.uploadedFiles.topic = null;
+        await this.fetchTestPapers();
+      } catch (error) {
+        console.error('上传试卷文件失败：', error);
+        this.$message.error('上传试卷文件失败，请稍后重试');
+      } finally {
+        this.$message.closeAll();
+      }
+    },
+
+    // 上传答题卡文件 - 添加调试日志
+    async uploadAnswerFile() {
+      console.log('尝试上传答题卡文件:', this.uploadedFiles.answer);
+
+      // 直接从文件列表获取文件作为备选方案
+      const validFile = this.answerCardFileList.find(f => f.status !== 'removed');
+      const fileToUpload = this.uploadedFiles.answer || (validFile ? validFile.raw : null);
+
+      if (!fileToUpload) {
+        this.$message.warning('请先选择要上传的答题卡文件');
+        return;
       }
 
-      return true;
+      try {
+        const token = Cookies.get('access');
+        const formData = new FormData();
+        formData.append('answers_parse_file', fileToUpload);
+
+        const res = await request({
+          url: `/sexam/testpapers/${this.editForm.id}/`,
+          method: 'patch',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          data: formData
+        });
+
+        this.$message.success('答题卡文件上传成功');
+        this.editForm.answers_parse_file = res.answers_parse_file;
+        this.answerCardFileList = this.parseFileInfo(res.answers_parse_file, '答题卡');
+        this.uploadedFiles.answer = null;
+        await this.fetchTestPapers();
+      } catch (error) {
+        console.error('上传答题卡文件失败：', error);
+        this.$message.error('上传答题卡文件失败，请稍后重试');
+      } finally {
+        this.$message.closeAll();
+      }
+    },
+
+    // 上传参考答案文件 - 添加调试日志
+    async uploadStandardFile() {
+      console.log('尝试上传参考答案文件:', this.uploadedFiles.standard);
+
+      // 直接从文件列表获取文件作为备选方案
+      const validFile = this.standardAnswerFileList.find(f => f.status !== 'removed');
+      const fileToUpload = this.uploadedFiles.standard || (validFile ? validFile.raw : null);
+
+      if (!fileToUpload) {
+        this.$message.warning('请先选择要上传的参考答案文件');
+        return;
+      }
+
+      try {
+        const token = Cookies.get('access');
+        const formData = new FormData();
+        formData.append('standard_answer_file', fileToUpload);
+
+        const res = await request({
+          url: `/sexam/testpapers/${this.editForm.id}/`,
+          method: 'patch',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          data: formData
+        });
+
+        this.$message.success('参考答案文件上传成功');
+        this.editForm.standard_answer_file = res.standard_answer_file;
+        this.standardAnswerFileList = this.parseFileInfo(res.standard_answer_file, '参考答案');
+        this.uploadedFiles.standard = null;
+        await this.fetchTestPapers();
+      } catch (error) {
+        console.error('上传参考答案文件失败：', error);
+        this.$message.error('上传参考答案文件失败，请稍后重试');
+      } finally {
+        this.$message.closeAll();
+      }
     },
 
     async handleEditSubmit() {
-          try {
-            const token = Cookies.get('access')
-            const formData = new FormData()
-            formData.append('name', this.editForm.name)
-            formData.append('subject', this.editForm.subject)
-            formData.append('exam', this.$route.params.id)
+      // 验证必填项
+      if (!this.editForm.name) {
+        this.$message.error('请输入试卷名称');
+        return;
+      }
 
-            // 添加定位数据
-            formData.append('positioning1', JSON.stringify(this.editForm.positioning1))
-            formData.append('positioning1_enabled', this.editForm.positioning1_enabled)
-            formData.append('positioning2', JSON.stringify(this.editForm.positioning2))
-            formData.append('positioning2_enabled', this.editForm.positioning2_enabled)
+      if (!this.editForm.subject) {
+        this.$message.error('请选择学科类型');
+        return;
+      }
 
-            // 处理文件上传 - 确保正确添加文件
-            const fieldMap = {
-              topic: 'topic_paper_file',
-              answer: 'answers_parse_file',
-              standard: 'standard_answer_file',
-              image1: 'answers_parse_image_file1',
-              image2: 'answers_parse_image_file2'
-            }
+      try {
+        const token = Cookies.get('access');
+        const formData = new FormData();
+        // 只修改试卷名称和学科类型
+        formData.append('name', this.editForm.name);
+        formData.append('subject', this.editForm.subject);
+        formData.append('exam', this.$route.params.id);
 
-            // 文件列表映射表
-            const fileListMap = {
-              topic: this.topicPaperFileList,
-              answer: this.answerCardFileList,
-              standard: this.standardAnswerFileList,
-              image1: this.answerImage1FileList,
-              image2: this.answerImage2FileList
-            }
+        await request({
+          url: `/sexam/testpapers/${this.editForm.id}/`,
+          method: 'patch',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          data: formData
+        });
 
-            // 确保处理所有文件类型，包括新上传和已删除的
-            Object.keys(fieldMap).forEach(type => {
-              const fieldName = fieldMap[type]
-              const fileList = fileListMap[type] || [];
-              const hasNewFile = this.uploadedFiles[type] !== null && this.uploadedFiles[type] !== undefined;
-
-              // 情况1：有新上传的文件
-              if (hasNewFile) {
-                formData.append(fieldName, this.uploadedFiles[type])
-              }
-              // 情况2：文件列表为空且原本有文件，表示用户要删除该文件
-              else if (fileList.length === 0 && this.editForm[fieldName]) {
-                formData.append(fieldName, '')
-              }
-              // 情况3：保留原文件（不做处理，后端会保持原有文件）
-            })
-
-            await request({
-              url: `/sexam/testpapers/${this.editForm.id}/`,
-              method: 'patch',
-              headers: {
-                Authorization: `Bearer ${token}`,
-                // 移除Content-Type，让浏览器自动处理
-              },
-              data: formData
-            })
-            this.$message.success('编辑成功')
-            this.editDialogVisible = false
-            await this.fetchTestPapers()
-          } catch (error) {
-            console.error('编辑试卷失败：', error)
-            this.$message.error('编辑失败，请稍后重试')
-          }
-        },
+        this.$message.success('编辑成功');
+        this.editDialogVisible = false;
+        await this.fetchTestPapers();
+      } catch (error) {
+        console.error('编辑试卷失败：', error);
+        this.$message.error('编辑失败，请稍后重试');
+      }
+    },
 
     // 筛选功能 - 按学科类型筛选
     handleFilter() {
@@ -873,7 +1051,8 @@ export default {
         return
       }
 
-      try {
+
+    try {
         const token = Cookies.get('access')
         const formData = new FormData()
         formData.append('name', this.addForm.name)
@@ -886,21 +1065,15 @@ export default {
         formData.append('positioning2', JSON.stringify([]))
         formData.append('positioning2_enabled', false)
 
-        // 处理新建文件上传
-        if (this.addTopicPaperFileList.length > 0 && this.addTopicPaperFileList[0].raw) {
-          formData.append('topic_paper_file', this.addTopicPaperFileList[0].raw)
+        // 添加文件到formData
+        if (this.addUploadedFiles.topic) {
+          formData.append('topic_paper_file', this.addUploadedFiles.topic);
         }
-        if (this.addAnswerCardFileList.length > 0 && this.addAnswerCardFileList[0].raw) {
-          formData.append('answers_parse_file', this.addAnswerCardFileList[0].raw)
+        if (this.addUploadedFiles.answer) {
+          formData.append('answers_parse_file', this.addUploadedFiles.answer);
         }
-        if (this.addStandardAnswerFileList.length > 0 && this.addStandardAnswerFileList[0].raw) {
-          formData.append('standard_answer_file', this.addStandardAnswerFileList[0].raw)
-        }
-        if (this.addAnswerImage1FileList.length > 0 && this.addAnswerImage1FileList[0].raw) {
-          formData.append('answers_parse_image_file1', this.addAnswerImage1FileList[0].raw)
-        }
-        if (this.addAnswerImage2FileList.length > 0 && this.addAnswerImage2FileList[0].raw) {
-          formData.append('answers_parse_image_file2', this.addAnswerImage2FileList[0].raw)
+        if (this.addUploadedFiles.standard) {
+          formData.append('standard_answer_file', this.addUploadedFiles.standard);
         }
 
 
@@ -923,46 +1096,53 @@ export default {
       }
     },
 
-    // 定位编辑相关方法
-    handleEditPositioning(type) {
-      // 如果已经在编辑该类型，则保存并退出编辑
-      if (this.isEditingPositioning && this.editingPositioningType === type) {
-        this.savePositioning();
-        return;
-      }
-
-      // 否则进入编辑模式
+    // 打开定位编辑弹窗
+    openPositioningDialog(type) {
       this.editingPositioningType = type;
-      this.isEditingPositioning = true;
-    },
+      // 根据类型设置对应的图片和定位数据
+      this.currentPositioningImage = type === 'positioning1'
+        ? this.currentPaper.answers_parse_image_file1
+        : this.currentPaper.answers_parse_image_file2;
 
-    cancelEditPositioning() {
-      this.isEditingPositioning = false;
-      this.editingPositioningType = '';
-    },
+      // 保存当前定位数据的副本，用于编辑
+      this.currentPositioningData = JSON.parse(JSON.stringify(this.currentPaper[type] || []));
+      this.tempPositioningData = JSON.parse(JSON.stringify(this.currentPositioningData));
 
-    // 图片加载完成后获取尺寸
-    onImageLoad(refName) {
-      const imgElement = this.$refs[refName].$el.querySelector('img');
-      if (imgElement) {
-        this.imageDimensions[refName] = {
-          width: imgElement.offsetWidth,
-          height: imgElement.offsetHeight
-        };
-      }
+      // 打开弹窗
+      this.positioningDialogVisible = true;
+
+      // 确保弹窗打开后正确初始化滚动位置
+      this.$nextTick(() => {
+        const box = this.$refs.scrollBox;
+        if (box) {
+          box.scrollTop = 0;
+          box.scrollLeft = 0;
+        }
+      });
     },
 
     // 接收来自ImageCanvas的位置更新
     handlePositionUpdated(newPositions) {
-      if (this.editingPositioningType) {
-        this.currentPaper[this.editingPositioningType] = newPositions;
-      }
+      this.currentPositioningData = newPositions;
     },
 
-    savePositioning() {
-      // 保存定位数据到服务器
+    // 取消定位编辑
+    cancelPositioningEdit() {
+      // 恢复原始数据
+      this.currentPositioningData = this.tempPositioningData;
+      this.positioningDialogVisible = false;
+      this.editingPositioningType = '';
+    },
+
+    // 确认定位编辑
+    confirmPositioningEdit() {
+      // 保存定位数据到当前试卷对象
+      this.currentPaper[this.editingPositioningType] = this.currentPositioningData;
+      // 标记为已确认
+      this.currentPaper[`${this.editingPositioningType}_enabled`] = true;
+      // 保存到服务器
       this.savePositioningToServer();
-      this.isEditingPositioning = false;
+      this.positioningDialogVisible = false;
       this.editingPositioningType = '';
     },
 
@@ -1090,30 +1270,15 @@ export default {
 
 .image-item {
   flex: 1;
-}
-
-/* 图片与Canvas重叠容器 */
-.image-canvas-container {
-  position: relative;
-  display: inline-block;
-  width: 100%;
-  min-height: 300px;
+  margin-bottom: 20px;
 }
 
 .base-image {
   width: 100%;
   height: auto;
   display: block;
-}
-
-/* Canvas覆盖在图片上方 */
-::v-deep .canvas-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: auto;
+  border: 1px solid #eee;
+  border-radius: 4px;
 }
 
 .image-header {
@@ -1148,87 +1313,49 @@ export default {
   border: 1px solid #ffa39e;
 }
 
-/* 定位方框样式 - 根据状态显示不同颜色 */
-.positioning-box {
+/* 定位编辑弹窗样式 */
+.positioning-dialog {
+  max-width: 95vw !important;
+}
+
+.original-size-container {
+  position: relative;
+  display: block;
+  overflow: auto;
+  max-height: 70vh;
+  padding: 0;
+  margin: 0 auto;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+}
+
+/* 图片包装器，确保正确计算尺寸和定位 */
+.image-wrapper {
+  position: relative;
+  display: inline-block;
+  padding: 0;
+  margin: 0;
+}
+
+.original-image {
+  display: block;
+  /* 关键：确保图片显示原始尺寸，不被缩放 */
+  max-width: none !important;
+  max-height: none !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: none !important;
+  transform: none !important;
+}
+
+/* 定位编辑弹窗中的Canvas样式 */
+::v-deep .positioning-dialog .canvas-overlay {
   position: absolute;
-  border: 2px solid;
-  background-color: rgba(0, 0, 0, 0.1);
-  cursor: move;
-  box-sizing: border-box;
-  transition: all 0.2s ease;
-}
-
-/* 未确认状态 - 红色框 */
-.positioning-box.unconfirmed {
-  border-color: #f5222d;
-  background-color: rgba(245, 34, 45, 0.1);
-}
-
-/* 已确认状态 - 绿色框 */
-.positioning-box.confirmed {
-  border-color: #52c41a;
-  background-color: rgba(82, 196, 26, 0.1);
-}
-
-/* 编辑状态 - 虚线蓝色框 */
-.positioning-box.editing {
-  border-style: dashed;
-  border-color: #409eff;
-  background-color: rgba(64, 158, 255, 0.1);
-}
-
-/* 调整大小手柄 */
-.resize-handle {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  background-color: white;
-  border: 1px solid;
-  box-sizing: border-box;
-}
-
-/* 编辑状态下的手柄颜色 */
-.positioning-box.editing .resize-handle {
-  border-color: #409eff;
-}
-
-/* 未确认状态下的手柄颜色 */
-.positioning-box.unconfirmed .resize-handle {
-  border-color: #f5222d;
-}
-
-/* 已确认状态下的手柄颜色 */
-.positioning-box.confirmed .resize-handle {
-  border-color: #52c41a;
-}
-
-.resize-handle.top-left {
-  top: -5px;
-  left: -5px;
-  cursor: nwse-resize;
-}
-
-.resize-handle.top-right {
-  top: -5px;
-  right: -5px;
-  cursor: nesw-resize;
-}
-
-.resize-handle.bottom-left {
-  bottom: -5px;
-  left: -5px;
-  cursor: nesw-resize;
-}
-
-.resize-handle.bottom-right {
-  bottom: -5px;
-  right: -5px;
-  cursor: nwse-resize;
-}
-
-/* 添加定位点按钮 */
-.add-position-btn {
-  margin-top: 10px;
+  top: 0;
+  left: 0;
+  pointer-events: auto;
+  /* 确保画布不被缩放 */
+  transform: none !important;
 }
 
 .image-placeholder {
@@ -1287,6 +1414,18 @@ export default {
   flex-direction: column;
   align-items: start;
   margin-bottom: 5px;
+}
+
+/* 上传按钮组样式 */
+.upload-button-group {
+  display: flex;
+  gap: 8px; /* 按钮之间的间距 */
+  align-items: center;
+}
+
+/* 确保按钮大小一致 */
+.upload-button-group .el-button {
+  min-width: 100px; /* 统一按钮宽度 */
 }
 
 .dialog-footer {
@@ -1502,4 +1641,59 @@ export default {
     gap: 20px; */
   }
 }
+
+.positioning-dialog {
+  max-width: 95vw !important;
+  max-height: 90vh !important;
+}
+
+.positioning-container {
+  width: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* 修复滚动问题的核心样式 */
+.original-size-container {
+  overflow: auto;
+  max-height: 70vh;
+  background: #f9f9f9;
+}
+
+/* 增强滚动条样式 */
+.original-size-container::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.original-size-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 6px;
+}
+
+.original-size-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 6px;
+  border: 3px solid #f1f1f1;
+}
+
+.original-size-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 响应式调整 */
+@media screen and (max-width: 768px) {
+  .original-size-container {
+    max-height: calc(70vh - 80px);
+    padding: 0;
+  }
+
+  .positioning-container {
+    padding: 8px;
+  }
+}
 </style>
+
+
+
+
