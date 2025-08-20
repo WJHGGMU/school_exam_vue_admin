@@ -46,8 +46,8 @@
       >
         <el-form-item label="所属组织" required>
           <el-cascader
-            v-model="addExamForm.organizationId"
-            :options="data2"
+            v-model="editExamForm.organizationId"
+            :options="filteredOrgData"
             :props="cascaderProps"
             clearable
             placeholder="请选择考试所属组织"

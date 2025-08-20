@@ -73,7 +73,7 @@ export const constantRoutes = [
         path: 'score/:id',
         name: 'ScoreDetail',
         component: () => import('@/views/form/score'), // 需创建对应的详情组件
-        meta: { title: '考试详情' },
+        meta: { title: '成绩详情' },
         hidden: true // 在侧边栏不显示，通过导航跳转访问
       },
     ]

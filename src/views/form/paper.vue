@@ -271,7 +271,7 @@
             class="upload-demo"
             action="#"
             :limit="1"
-            accept=".docx"
+            accept=".pdf"
             :on-exceed="handleFileExceed"
             :on-preview="handlePreview"
             :file-list="addTopicPaperFileList"
@@ -282,7 +282,7 @@
             <div class="upload-button-group">
               <el-button slot="trigger" type="primary" size="mini">选取文件</el-button>
             </div>
-            <div slot="tip" class="el-upload__tip">可选，支持上传 doc、docx 等格式文件</div>
+            <div slot="tip" class="el-upload__tip">可选，支持上传 pdf 格式文件</div>
           </el-upload>
         </el-form-item>
         <el-form-item label="答题卡">
@@ -290,7 +290,7 @@
             class="upload-demo"
             action="#"
             :limit="1"
-            accept=".docx"
+            accept=".pdf"
             :auto-upload="false"
             :on-exceed="handleFileExceed"
             :on-preview="handlePreview"
@@ -301,7 +301,7 @@
             <div class="upload-button-group">
               <el-button slot="trigger" type="primary" size="mini">选取文件</el-button>
             </div>
-            <div slot="tip" class="el-upload__tip">可选，支持上传 doc、docx 等格式文件</div>
+            <div slot="tip" class="el-upload__tip">可选，支持上传 pdf 格式文件</div>
           </el-upload>
         </el-form-item>
         <el-form-item label="参考答案">
@@ -309,7 +309,7 @@
             class="upload-demo"
             action="#"
             :limit="1"
-            accept=".docx"
+            accept=".pdf"
             :auto-upload="false"
             :on-exceed="handleFileExceed"
             :on-preview="handlePreview"
@@ -320,7 +320,7 @@
             <div class="upload-button-group">
               <el-button slot="trigger" type="primary" size="mini">选取文件</el-button>
             </div>
-            <div slot="tip" class="el-upload__tip">可选，支持上传 doc、docx 等格式文件</div>
+            <div slot="tip" class="el-upload__tip">可选，支持上传 pdf 格式文件</div>
           </el-upload>
         </el-form-item>
       </el-form>
@@ -361,7 +361,7 @@
             class="upload-demo"
             action="#"
             :limit="1"
-            accept=".docx"
+            accept=".pdf"
             :auto-upload="false"
             :on-exceed="handleFileExceed"
             :on-preview="handlePreview"
@@ -373,7 +373,7 @@
               <el-button slot="trigger" type="primary" size="mini">选取文件</el-button>
               <el-button type="success" @click.stop="uploadTopicFile" size="mini">上传文件</el-button>
             </div>
-            <div slot="tip" class="el-upload__tip">可选，支持上传 doc、docx 等格式文件</div>
+            <div slot="tip" class="el-upload__tip">可选，支持上传 pdf 格式文件</div>
           </el-upload>
         </el-form-item>
         <el-form-item label="答题卡">
@@ -381,7 +381,7 @@
             class="upload-demo"
             action="#"
             :limit="1"
-            accept=".docx"
+            accept=".pdf"
             :on-exceed="handleFileExceed"
             :auto-upload="false"
             :on-preview="handlePreview"
@@ -393,7 +393,7 @@
               <el-button slot="trigger" type="primary" size="mini">选取文件</el-button>
               <el-button type="success" @click.stop="uploadAnswerFile" size="mini">上传文件</el-button>
             </div>
-            <div slot="tip" class="el-upload__tip">可选，支持上传 doc、docx 等格式文件</div>
+            <div slot="tip" class="el-upload__tip">可选，支持上传 pdf 格式文件</div>
           </el-upload>
         </el-form-item>
         <el-form-item label="参考答案">
@@ -401,7 +401,7 @@
             class="upload-demo"
             action="#"
             :limit="1"
-            accept=".docx"
+            accept=".pdf"
             :auto-upload="false"
             :on-exceed="handleFileExceed"
             :on-preview="handlePreview"
@@ -413,7 +413,7 @@
               <el-button slot="trigger" type="primary" size="mini">选取文件</el-button>
               <el-button type="success" @click.stop="uploadStandardFile" size="mini">上传文件</el-button>
             </div>
-            <div slot="tip" class="el-upload__tip">可选，支持上传 doc、docx 等格式文件</div>
+            <div slot="tip" class="el-upload__tip">可选，支持上传 pdf 格式文件</div>
           </el-upload>
         </el-form-item>
       </el-form>

@@ -3,9 +3,10 @@
     class="canvas-overlay"
     ref="canvas"
     @mousedown="startDrag"
-    @mousemove="handleDrag"
+    @mousemove="handleMouseActions"
     @mouseup="stopDrag"
     @mouseleave="stopDrag"
+    :style="cursorStyle"
   ></canvas>
 </template>
 
@@ -28,7 +29,10 @@ export default {
       resizeHandle: null,
       startX: 0,
       startY: 0,
-      startPos: {}
+      startPos: {},
+      cursorStyle: { cursor: 'default' },
+      handleSize: 10, // 手柄基础尺寸
+      tolerance: 3    // 容错范围（适当增大，默认建议3-5）
     }
   },
   watch: {
@@ -43,7 +47,12 @@ export default {
     this.loadImage()
   },
   methods: {
-    /* 1. 加载图片 -> 设置 canvas 尺寸 */
+    handleMouseActions(e) {
+      this.handleDrag(e)
+      this.handleMouseMove(e)
+    },
+
+    /* 加载图片 */
     loadImage () {
       if (!this.src) return
       const img = new Image()
@@ -59,7 +68,7 @@ export default {
       img.src = this.src
     },
 
-    /* 2. 绘制所有矩形 */
+    /* 绘制逻辑 */
     draw () {
       if (!this.ctx) return
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
@@ -87,7 +96,7 @@ export default {
       this.ctx.setLineDash([])
     },
     drawHandles (x, y, w, h) {
-      const size = 10
+      const size = this.handleSize
       const draw = (hx, hy) => {
         this.ctx.fillStyle = '#fff'
         this.ctx.fillRect(hx, hy, size, size)
@@ -100,44 +109,111 @@ export default {
       draw(x + w - size / 2, y + h - size / 2)
     },
 
-    /* 3. 拖拽 / 缩放逻辑（保持你原来的即可） */
-    startDrag (e) {
-      if (!this.isEditing) return
-      const { left, top } = this.canvas.getBoundingClientRect()
-      const mx = e.clientX - left
-      const my = e.clientY - top
-      const size = 10
-      for (let i = this.value.length - 1; i >= 0; i--) {
-        const r = this.value[i]
-        // 先检查是否在矩形内
-        if (mx >= r.x && mx <= r.x + r.width && my >= r.y && my <= r.y + r.height) {
-          // 再检查是否在四个角点上
-          const handles = [
-            { name: 'tl', x: r.x - size / 2, y: r.y - size / 2 },
-            { name: 'tr', x: r.x + r.width - size / 2, y: r.y - size / 2 },
-            { name: 'bl', x: r.x - size / 2, y: r.y + r.height - size / 2 },
-            { name: 'br', x: r.x + r.width - size / 2, y: r.y + r.height - size / 2 }
-          ]
-          let handle = handles.find(h => mx >= h.x && mx <= h.x + size && my >= h.y && my <= h.y + size)
-          if (handle) {
-            this.draggingIndex = i
-            this.resizeHandle = handle.name
-          } else {
-            this.draggingIndex = i
-            this.resizeHandle = null
-          }
-          this.startX = mx
-          this.startY = my
-          this.startPos = { ...r }
-          return
-        }
+    /* 光标检测逻辑 */
+    handleMouseMove(e) {
+      if (!this.isEditing || this.draggingIndex !== -1) return
+      // 调用统一的检测函数
+      const result = this.detectHandleInteraction(e)
+      if (result.hoveredHandle) {
+        this.cursorStyle = { cursor: result.hoveredHandle.cursor }
+      } else if (result.inRect) {
+        this.cursorStyle = { cursor: 'move' }
+      } else {
+        this.cursorStyle = { cursor: 'default' }
       }
     },
+
+    /* 拖拽开始逻辑 */
+    startDrag (e) {
+      if (!this.isEditing) return
+      // 调用统一的检测函数
+      const result = this.detectHandleInteraction(e)
+      if (result.hoveredHandle) {
+        this.draggingIndex = result.rectIndex
+        this.resizeHandle = result.hoveredHandle.name
+        this.startX = result.mx
+        this.startY = result.my
+        this.startPos = { ...this.value[result.rectIndex] }
+      } else if (result.inRect) {
+        this.draggingIndex = result.rectIndex
+        this.resizeHandle = null
+        this.startX = result.mx
+        this.startY = result.my
+        this.startPos = { ...this.value[result.rectIndex] }
+      }
+    },
+
+    /* 核心：统一的手柄交互检测函数（光标和拖拽共用） */
+    detectHandleInteraction(e) {
+      const rect = this.canvas.getBoundingClientRect()
+      const scaleX = this.canvas.width / rect.width
+      const scaleY = this.canvas.height / rect.height
+      const mx = (e.clientX - rect.left) * scaleX
+      const my = (e.clientY - rect.top) * scaleY
+
+      for (let i = this.value.length - 1; i >= 0; i--) {
+        const r = this.value[i]
+        const handles = this.getHandles(r)
+
+        // 检测是否在手柄范围内（核心判断逻辑）
+        const hoveredHandle = handles.find(h =>
+          mx >= h.x - this.tolerance &&
+          mx <= h.x + this.handleSize + this.tolerance &&
+          my >= h.y - this.tolerance &&
+          my <= h.y + this.handleSize + this.tolerance
+        )
+
+        if (hoveredHandle) {
+          return {
+            hoveredHandle,
+            rectIndex: i,
+            mx,
+            my,
+            inRect: true
+          }
+        }
+
+        // 检测是否在矩形内部
+        if (mx >= r.x && mx <= r.x + r.width && my >= r.y && my <= r.y + r.height) {
+          return {
+            hoveredHandle: null,
+            rectIndex: i,
+            mx,
+            my,
+            inRect: true
+          }
+        }
+      }
+
+      return {
+        hoveredHandle: null,
+        rectIndex: -1,
+        mx,
+        my,
+        inRect: false
+      }
+    },
+
+    /* 生成手柄数据 */
+    getHandles(rect) {
+      const { x, y, width, height } = rect
+      const size = this.handleSize
+      return [
+        { name: 'tl', x: x - size / 2, y: y - size / 2, cursor: 'nwse-resize' },
+        { name: 'tr', x: x + width - size / 2, y: y - size / 2, cursor: 'nesw-resize' },
+        { name: 'bl', x: x - size / 2, y: y + height - size / 2, cursor: 'nesw-resize' },
+        { name: 'br', x: x + width - size / 2, y: y + height - size / 2, cursor: 'nwse-resize' }
+      ]
+    },
+
+    /* 拖拽过程逻辑 */
     handleDrag (e) {
       if (this.draggingIndex === -1) return
-      const { left, top } = this.canvas.getBoundingClientRect()
-      const mx = e.clientX - left
-      const my = e.clientY - top
+      const rect = this.canvas.getBoundingClientRect()
+      const scaleX = this.canvas.width / rect.width
+      const scaleY = this.canvas.height / rect.height
+      const mx = (e.clientX - rect.left) * scaleX
+      const my = (e.clientY - rect.top) * scaleY
       const dx = mx - this.startX
       const dy = my - this.startY
       let r = { ...this.startPos }
@@ -173,9 +249,11 @@ export default {
       this.$emit('position-updated', list)
       this.draw()
     },
+
     stopDrag () {
       this.draggingIndex = -1
       this.resizeHandle = null
+      this.handleMouseMove({ clientX: 0, clientY: 0 })
     }
   }
 }
