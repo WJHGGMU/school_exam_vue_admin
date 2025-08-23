@@ -6,6 +6,7 @@
     @mousemove="handleMouseActions"
     @mouseup="stopDrag"
     @mouseleave="stopDrag"
+    @dblclick="handleDoubleClick"
     :style="cursorStyle"
   ></canvas>
 </template>
@@ -32,14 +33,24 @@ export default {
       startPos: {},
       cursorStyle: { cursor: 'default' },
       handleSize: 10, // 手柄基础尺寸
-      tolerance: 3    // 容错范围（适当增大，默认建议3-5）
+      tolerance: 3,   // 容错范围
+      selectedIndex: -1 // 记录当前选中的矩形索引
     }
   },
   watch: {
     src () { this.loadImage() },
     value () { this.draw() },
     isEditing () { this.draw() },
-    isConfirmed () { this.draw() }
+    isConfirmed () { this.draw() },
+    // 当选中索引变化时触发事件
+    selectedIndex (newVal, oldVal) {
+      this.draw()
+      if (newVal === -1) {
+        this.$emit('box-deselected')
+      } else if (newVal !== oldVal) {
+        this.$emit('box-selected', newVal)
+      }
+    }
   },
   mounted () {
     this.canvas = this.$refs.canvas
@@ -76,23 +87,38 @@ export default {
     },
     drawRect (pos, index) {
       const { x, y, width, height } = pos
-      const selected = index === this.draggingIndex
+      const isDragging = index === this.draggingIndex
+      const isSelected = index === this.selectedIndex // 判断是否选中
       const editing = this.isEditing
       const confirmed = this.isConfirmed
 
-      this.ctx.strokeStyle = editing ? '#409eff' : confirmed ? '#52c41a' : '#f5222d'
-      this.ctx.lineWidth = 2
-      this.ctx.setLineDash(editing ? [5, 5] : [])
+      // 选中状态的样式
+      if (isSelected) {
+        this.ctx.strokeStyle = '#409eff' // 选中状态使用蓝色边框
+        this.ctx.lineWidth = 3
+        this.ctx.setLineDash(editing ? [5, 5] : [])
+      } else {
+        this.ctx.strokeStyle = editing ? '#52c41a' : confirmed ? '#52c41a' : '#f5222d'
+        this.ctx.lineWidth = 2
+        this.ctx.setLineDash([])
+      }
+
       this.ctx.strokeRect(x, y, width, height)
 
-      this.ctx.fillStyle = editing
-        ? 'rgba(64, 158, 255, 0.1)'
-        : confirmed
+      // 选中状态的填充色
+      this.ctx.fillStyle = isSelected
+        ? 'rgba(64, 158, 255, 0.1)' // 选中状态的填充色
+        : editing
           ? 'rgba(82, 196, 26, 0.1)'
-          : 'rgba(245, 34, 45, 0.1)'
+          : confirmed
+            ? 'rgba(82, 196, 26, 0.1)'
+            : 'rgba(245, 34, 45, 0.1)'
       this.ctx.fillRect(x, y, width, height)
 
-      if (editing) this.drawHandles(x, y, width, height)
+      // 只对选中的矩形绘制手柄
+      if (isSelected) {
+        this.drawHandles(x, y, width, height)
+      }
       this.ctx.setLineDash([])
     },
     drawHandles (x, y, w, h) {
@@ -109,25 +135,56 @@ export default {
       draw(x + w - size / 2, y + h - size / 2)
     },
 
-    /* 光标检测逻辑 */
+    /* 光标检测逻辑 - 只对选中的矩形显示操作光标 */
     handleMouseMove(e) {
       if (!this.isEditing || this.draggingIndex !== -1) return
-      // 调用统一的检测函数
+
+      // 如果没有选中任何矩形，直接显示默认光标
+      if (this.selectedIndex === -1) {
+        this.cursorStyle = { cursor: 'default' }
+        return
+      }
+
       const result = this.detectHandleInteraction(e)
-      if (result.hoveredHandle) {
+      // 只处理当前选中矩形的光标交互
+      if (result.hoveredHandle && result.rectIndex === this.selectedIndex) {
         this.cursorStyle = { cursor: result.hoveredHandle.cursor }
-      } else if (result.inRect) {
+      } else if (result.inRect && result.rectIndex === this.selectedIndex) {
         this.cursorStyle = { cursor: 'move' }
       } else {
         this.cursorStyle = { cursor: 'default' }
       }
     },
 
-    /* 拖拽开始逻辑 */
-    startDrag (e) {
+    /* 双击处理选中状态切换 */
+    handleDoubleClick(e) {
       if (!this.isEditing) return
-      // 调用统一的检测函数
       const result = this.detectHandleInteraction(e)
+
+      // 双击矩形内部且不是手柄 - 切换选中状态
+      if (!result.hoveredHandle && result.inRect) {
+        if (this.selectedIndex === result.rectIndex) {
+          // 再次双击已选中的矩形，取消选中
+          this.selectedIndex = -1
+        } else {
+          // 选中新的矩形
+          this.selectedIndex = result.rectIndex
+        }
+      } else if (!result.inRect) {
+        // 双击空白区域，取消选中
+        this.selectedIndex = -1
+      }
+    },
+
+    /* 拖拽开始逻辑 - 只有选中的矩形才能被拖拽 */
+    startDrag (e) {
+      if (!this.isEditing || this.selectedIndex === -1) return
+
+      const result = this.detectHandleInteraction(e)
+      // 只允许拖拽当前选中的矩形
+      if (result.rectIndex !== this.selectedIndex) return
+
+      // 处理拖拽逻辑
       if (result.hoveredHandle) {
         this.draggingIndex = result.rectIndex
         this.resizeHandle = result.hoveredHandle.name
@@ -143,7 +200,7 @@ export default {
       }
     },
 
-    /* 核心：统一的手柄交互检测函数（光标和拖拽共用） */
+    /* 核心：统一的手柄交互检测函数 */
     detectHandleInteraction(e) {
       const rect = this.canvas.getBoundingClientRect()
       const scaleX = this.canvas.width / rect.width
@@ -155,7 +212,7 @@ export default {
         const r = this.value[i]
         const handles = this.getHandles(r)
 
-        // 检测是否在手柄范围内（核心判断逻辑）
+        // 检测是否在手柄范围内
         const hoveredHandle = handles.find(h =>
           mx >= h.x - this.tolerance &&
           mx <= h.x + this.handleSize + this.tolerance &&
@@ -254,6 +311,21 @@ export default {
       this.draggingIndex = -1
       this.resizeHandle = null
       this.handleMouseMove({ clientX: 0, clientY: 0 })
+    },
+
+    // 提供外部调用的刷新画布方法
+    updateCanvas() {
+      this.draw()
+    },
+
+    // 供外部调用的选中方法
+    setSelectedIndex(index) {
+      if (index >= 0 && index < this.value.length) {
+        this.selectedIndex = index
+        return true
+      }
+      this.selectedIndex = -1
+      return false
     }
   }
 }

@@ -3,10 +3,12 @@ import { MessageBox, Message } from 'element-ui'
 import store from '@/store'
 import { getToken } from '@/utils/auth'
 
+const BASE_URL = 'http://125.124.131.223:28090';
+
 // create an axios instance
 const service = axios.create({
-  baseURL: 'http://125.124.131.223:28090', // 直接使用后端地址
-  timeout: 5000 // request timeout
+  baseURL: BASE_URL, // 直接使用后端地址
+  timeout: 10000 // request timeout
 })
 
 // request interceptor
@@ -40,10 +42,11 @@ service.interceptors.response.use(
     Message({
       message: error.message || '请求失败',
       type: 'error',
-      duration: 5 * 1000
+      duration: 10 * 1000
     })
     return Promise.reject(error)
   }
 )
 
 export default service
+export { BASE_URL }

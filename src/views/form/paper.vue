@@ -79,7 +79,7 @@
         <div class="image-section">
           <h3>答题卡图片</h3>
           <div class="image-container">
-            <!-- 首页图片 - 仅显示图片，不绑定画布 -->
+            <!-- 首页图片 -->
             <div v-if="currentPaper.answers_parse_image_file1" class="image-item with-controls">
               <div class="image-header">
                 <p>首页</p>
@@ -98,7 +98,6 @@
                 </div>
               </div>
 
-              <!-- 仅显示图片 -->
               <el-image
                 :src="currentPaper.answers_parse_image_file1"
                 fit="contain"
@@ -116,7 +115,7 @@
               <p>未上传图片1</p>
             </div>
 
-            <!-- 尾页图片 - 仅显示图片，不绑定画布 -->
+            <!-- 尾页图片 -->
             <div v-if="currentPaper.answers_parse_image_file2" class="image-item with-controls">
               <div class="image-header">
                 <p>尾页</p>
@@ -135,7 +134,6 @@
                 </div>
               </div>
 
-              <!-- 仅显示图片 -->
               <el-image
                 :src="currentPaper.answers_parse_image_file2"
                 fit="contain"
@@ -196,14 +194,52 @@
       </div>
     </el-dialog>
 
-   <!-- 定位编辑弹窗 -->
+   <!-- 定位编辑弹窗 - 添加了编辑框操作功能 -->
    <el-dialog
-     :title="`编辑${editingPositioningType === 'positioning1' ? '首页' : '尾页'}定位`"
+     :title="`编辑${editingPositioningType === 'positioning1' ? '首页' : '尾页'}定位 (双击切换选中状态)`"
      :visible.sync="positioningDialogVisible"
      width="90%"
      custom-class="positioning-dialog"
      :body-style="{padding: 0}"
    >
+     <!-- 编辑工具栏 -->
+     <div class="positioning-toolbar">
+       <div class="toolbar-left">
+         <el-button
+           type="primary"
+           icon="el-icon-plus"
+           size="mini"
+           @click="addNewBox"
+         >
+           新增编辑框
+         </el-button>
+         <el-button
+           type="danger"
+           icon="el-icon-delete"
+           size="mini"
+           class="btn-margin-left"
+           @click="deleteSelectedBox"
+           :disabled="selectedBoxIndex === -1"
+         >
+           删除选中
+         </el-button>
+         <span class="selected-info" v-if="currentPositioningData.length > 0">
+           共 {{ currentPositioningData.length }} 个编辑框
+           <template v-if="selectedBoxIndex !== -1">，当前选中 #{{ selectedBoxIndex + 1 }}</template>
+         </span>
+       </div>
+       <div class="toolbar-right">
+         <el-button
+           type="info"
+           icon="el-icon-refresh"
+           size="mini"
+           @click="resetPositioning"
+         >
+           重置
+         </el-button>
+       </div>
+     </div>
+
      <!-- 外层滚动容器 -->
      <div class="original-size-container" ref="scrollBox">
        <!-- 图片包装器，用于精确计算尺寸 -->
@@ -229,6 +265,8 @@
            :natural="true"
            class="canvas-overlay"
            ref="imageCanvas"
+           @box-selected="onBoxSelected"
+           @box-deselected="onBoxDeselected"
          />
        </div>
      </div>
@@ -449,6 +487,7 @@ export default {
       currentPositioningImage: '',
       currentPositioningData: [],
       tempPositioningData: [], // 临时存储编辑中的定位数据
+      selectedBoxIndex: -1, // 当前选中的编辑框索引
       isPositioningFullscreen: false,
       imageDimensions: {
         positioningImage: { width: 0, height: 0 }
@@ -777,7 +816,7 @@ export default {
     },
 
 
-    // 编辑文件变化处理 - 修复核心
+    // 编辑文件变化处理
     handleFileChange(type, file, fileList) {
       console.log(file)
       console.log(fileList)
@@ -842,7 +881,7 @@ export default {
       return true;
     },
 
-    // 上传试卷文件 - 添加调试日志
+    // 上传试卷文件
     async uploadTopicFile() {
       console.log('尝试上传试卷文件:', this.uploadedFiles.topic);
 
@@ -882,7 +921,7 @@ export default {
       }
     },
 
-    // 上传答题卡文件 - 添加调试日志
+    // 上传答题卡文件
     async uploadAnswerFile() {
       console.log('尝试上传答题卡文件:', this.uploadedFiles.answer);
 
@@ -922,7 +961,7 @@ export default {
       }
     },
 
-    // 上传参考答案文件 - 添加调试日志
+    // 上传参考答案文件
     async uploadStandardFile() {
       console.log('尝试上传参考答案文件:', this.uploadedFiles.standard);
 
@@ -1107,6 +1146,7 @@ export default {
       // 保存当前定位数据的副本，用于编辑
       this.currentPositioningData = JSON.parse(JSON.stringify(this.currentPaper[type] || []));
       this.tempPositioningData = JSON.parse(JSON.stringify(this.currentPositioningData));
+      this.selectedBoxIndex = -1; // 重置选中状态
 
       // 打开弹窗
       this.positioningDialogVisible = true;
@@ -1121,17 +1161,80 @@ export default {
       });
     },
 
-    // 接收来自ImageCanvas的位置更新
-    handlePositionUpdated(newPositions) {
-      this.currentPositioningData = newPositions;
+    // 处理编辑框选中事件
+    onBoxSelected(index) {
+      this.selectedBoxIndex = index;
     },
 
-    // 取消定位编辑
-    cancelPositioningEdit() {
-      // 恢复原始数据
-      this.currentPositioningData = this.tempPositioningData;
-      this.positioningDialogVisible = false;
-      this.editingPositioningType = '';
+    // 处理编辑框取消选中事件
+    onBoxDeselected() {
+      this.selectedBoxIndex = -1;
+    },
+
+    // 添加新的编辑框
+    addNewBox() {
+      const img = this.$refs.oriImg.$el.querySelector('img');
+      if (!img) return;
+
+      // 获取图片尺寸
+      const imgWidth = img.naturalWidth || img.offsetWidth;
+      const imgHeight = img.naturalHeight || img.offsetHeight;
+
+      // 在图片中心创建一个默认大小为200x100的编辑框
+      const defaultWidth = 200;
+      const defaultHeight = 100;
+
+      const newBox = {
+        x: Math.max(0, (imgWidth - defaultWidth) / 2),
+        y: Math.max(0, (imgHeight - defaultHeight) / 2),
+        width: defaultWidth,
+        height: defaultHeight,
+        // 可以添加其他默认属性，如名称、类型等
+        name: `框${this.currentPositioningData.length + 1}`
+      };
+
+      // 添加新框到定位数据
+      this.currentPositioningData.push(newBox);
+      // 选中新添加的框
+      this.selectedBoxIndex = this.currentPositioningData.length - 1;
+
+      // 通知画布更新
+      this.$refs.imageCanvas.updateCanvas();
+    },
+
+    // 删除选中的编辑框
+    deleteSelectedBox() {
+      if (this.selectedBoxIndex === -1 || this.selectedBoxIndex >= this.currentPositioningData.length) {
+        this.$message.warning('请先选择要删除的编辑框');
+        return;
+      }
+
+      // 删除选中的框
+      this.currentPositioningData.splice(this.selectedBoxIndex, 1);
+      // 重置选中状态
+      this.selectedBoxIndex = -1;
+
+      // 通知画布更新
+      this.$refs.imageCanvas.updateCanvas();
+
+      this.$message.success('编辑框已删除');
+    },
+
+    // 重置定位数据
+    resetPositioning() {
+      this.$confirm('确定要重置所有编辑框吗？当前修改将会丢失。', '确认重置', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        // 恢复到初始状态
+        this.currentPositioningData = JSON.parse(JSON.stringify(this.tempPositioningData));
+        this.selectedBoxIndex = -1;
+        this.$refs.imageCanvas.updateCanvas();
+        this.$message.success('已重置所有编辑框');
+      }).catch(() => {
+        // 取消重置
+      });
     },
 
     // 确认定位编辑
@@ -1144,6 +1247,7 @@ export default {
       this.savePositioningToServer();
       this.positioningDialogVisible = false;
       this.editingPositioningType = '';
+      this.selectedBoxIndex = -1;
     },
 
     async savePositioningToServer() {
@@ -1316,6 +1420,33 @@ export default {
 /* 定位编辑弹窗样式 */
 .positioning-dialog {
   max-width: 95vw !important;
+}
+
+/* 定位编辑工具栏 */
+.positioning-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+}
+
+.selected-info {
+  font-size: 13px;
+  color: #606266;
+  white-space: nowrap;
 }
 
 .original-size-container {
@@ -1569,6 +1700,23 @@ export default {
     justify-content: space-between;
   }
 
+  /* 定位工具栏响应式调整 */
+  .positioning-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .toolbar-left, .toolbar-right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .selected-info {
+    display: none; /* 在小屏幕上隐藏信息，节省空间 */
+  }
+
   ::v-deep .fixed-dialog {
     top: 20px !important;
     bottom: 20px !important;
@@ -1693,7 +1841,3 @@ export default {
   }
 }
 </style>
-
-
-
-
