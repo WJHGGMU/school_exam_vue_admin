@@ -645,11 +645,36 @@ export default {
   min-width: 200px;
 }
 
+/* 外层容器不翻转，仅控制溢出 */
 .table-container {
   width: 100%;
-  overflow-x: auto;
+  overflow: hidden; /* 隐藏溢出，避免外层滚动条 */
   margin-bottom: 20px;
 }
+
+/* 针对 Element UI 表格的滚动容器进行翻转 */
+::v-deep .el-table__body-wrapper {
+  overflow-x: auto;
+  transform: rotateX(180deg);
+  -ms-transform: rotateX(180deg);
+  -webkit-transform: rotateX(180deg);
+}
+
+/* 表格内容（tbody）再翻转回来 */
+::v-deep .el-table__body {
+  transform: rotateX(180deg);
+  -ms-transform: rotateX(180deg);
+  -webkit-transform: rotateX(180deg);
+  min-width: 800px; /* 确保内容宽度触发滚动 */
+}
+
+::v-deep .el-table__fixed-body-wrapper {
+  transform: rotateX(180deg);
+  -ms-transform: rotateX(180deg);
+  -webkit-transform: rotateX(180deg);
+}
+
+
 
 .score-table {
   width: 100%;
