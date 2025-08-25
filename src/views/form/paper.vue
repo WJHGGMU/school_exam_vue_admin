@@ -196,10 +196,11 @@
 
    <!-- 定位编辑弹窗 - 添加了编辑框操作功能 -->
    <el-dialog
-     :title="`编辑${editingPositioningType === 'positioning1' ? '首页' : '尾页'}定位 (双击切换选中状态)`"
+     :title="`编辑${editingPositioningType === 'positioning1' ? '首页' : '尾页'}定位`"
      :visible.sync="positioningDialogVisible"
      width="90%"
      custom-class="positioning-dialog"
+     :before-close="cancelPositioningEdit"
      :body-style="{padding: 0}"
    >
      <!-- 编辑工具栏 -->
@@ -224,7 +225,7 @@
            删除选中
          </el-button>
          <span class="selected-info" v-if="currentPositioningData.length > 0">
-           共 {{ currentPositioningData.length }} 个编辑框
+            (双击切换选中状态) 共 {{ currentPositioningData.length }} 个编辑框
            <template v-if="selectedBoxIndex !== -1">，当前选中 #{{ selectedBoxIndex + 1 }}</template>
          </span>
        </div>
@@ -578,6 +579,28 @@ export default {
     window.removeEventListener('resize', this.handleResize)
   },
   methods: {
+    cancelPositioningEdit() {
+      // 检查是否有未保存的更改
+      if (JSON.stringify(this.currentPositioningData) !== JSON.stringify(this.tempPositioningData)) {
+        this.$confirm('当前有未保存的更改，确定要取消吗？', '确认取消', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          // 确认取消，关闭弹窗并重置状态
+          this.positioningDialogVisible = false;
+          this.editingPositioningType = '';
+          this.selectedBoxIndex = -1;
+        }).catch(() => {
+          // 取消操作，留在当前弹窗
+        });
+      } else {
+        // 没有更改，直接关闭弹窗
+        this.positioningDialogVisible = false;
+        this.editingPositioningType = '';
+        this.selectedBoxIndex = -1;
+      }
+    },
     handleFileExceed(files, fileList) {
           this.$message.warning(`只能选择一个文件!`);
         },
