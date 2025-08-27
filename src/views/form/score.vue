@@ -91,7 +91,7 @@
                 <span
                   v-else
                   class="score-with-image"
-                  @click="showImagePreview(scope.row.subjects[subjectCode].imageFiles)"
+                  @click="showImagePreview(scope.row.subjects[subjectCode].imageFiles, scope.row)"
                   style="cursor: pointer"
                 >
                   {{ scope.row.subjects[subjectCode].score || '-' }}
@@ -129,8 +129,9 @@
     <!-- 图片预览弹窗-->
     <el-dialog
       ref="previewDialog"
+      top="3vh"
+      width="52%"
       :visible.sync="previewVisible"
-      :title="`图片预览 (共 ${previewImageList.length} 张)`"
       :fullscreen="isFullscreen"
       :show-close="true"
       @close="closePreview"
@@ -138,6 +139,12 @@
       :append-to-body="true"
       class="fixed-center-dialog"
     >
+      <template slot="title">
+        <div style="display: flex;justify-content: space-between">
+          <span>图片预览 (共 {{ previewImageList.length }} 张)</span>
+          <el-button type="primary" size="small" style="margin-right: 40px;" @click="handleReport">批改报告</el-button>
+        </div>
+      </template>
       <div class="image-preview-container">
         <!-- 图片容器 -->
         <div
@@ -151,6 +158,14 @@
             class="preview-image"
             @load="imageLoaded"
           />
+          <div
+            v-for="(item, index) in positionList"
+            :key="index"
+            :class="item.class"
+            :style="item.style"
+          >
+            {{ item.text }}
+          </div>
           <!-- 点击提示 -->
           <div v-if="!isFullscreen" class="click-to-fullscreen-hint">
             点击图片进入全屏查看
@@ -183,6 +198,15 @@
         </div>
       </div>
     </el-dialog>
+    <el-dialog
+      title="批改报告"
+      :visible.sync="reportVisible"
+      width="50%"
+      class="report-dialog"
+      @close="reportVisible = false"
+    >
+      <vue-markdown>{{ markdownContent }}</vue-markdown>
+    </el-dialog>
   </div>
 </template>
 
@@ -191,6 +215,7 @@ import request from '@/utils/request'
 import { BASE_URL } from '@/utils/request'
 import Cookies from 'js-cookie'
 import { Empty, Table, TableColumn, Select, Option, Message, Dialog, Icon } from 'element-ui'
+import VueMarkdown from 'vue-markdown'
 
 // 辅助函数：为图片路径添加BASE_URL前缀
 const addBaseUrlToImage = (imagePath) => {
@@ -221,7 +246,8 @@ export default {
     ElSelect: Select,
     ElOption: Option,
     ElDialog: Dialog,
-    ElIcon: Icon
+    ElIcon: Icon,
+    VueMarkdown
   },
   data() {
     return {
@@ -229,20 +255,20 @@ export default {
       examOrganizationId: null,
 
       SUBJECT_TYPES: {
-        total: "总分",  // 确保总分是第一个选项
-        chinese: "语文",
-        math: "数学",
-        english: "英语",
-        physics: "物理",
-        chemistry: "化学",
-        biology: "生物",
-        history: "历史",
-        geography: "地理",
-        politics: "政治",
-        science: "科学"
+        total: '总分', // 确保总分是第一个选项
+        chinese: '语文',
+        math: '数学',
+        english: '英语',
+        physics: '物理',
+        chemistry: '化学',
+        biology: '生物',
+        history: '历史',
+        geography: '地理',
+        politics: '政治',
+        science: '科学'
       },
       classOptions: [],
-      selectedSubject: 'total',  // 默认选择总分
+      selectedSubject: 'total', // 默认选择总分
       selectedClass: null,
 
       // 显示的学科列表（用于动态生成表头）
@@ -258,7 +284,11 @@ export default {
       currentImageIndex: 0,
       imageLoading: false,
       isFullscreen: false, // 控制是否全屏显示
-      fullscreenElement: null // 记录全屏元素
+      fullscreenElement: null, // 记录全屏元素
+      positionList: [],
+      clickScore: {},
+      markdownContent: '',
+      reportVisible: false
     }
   },
   created() {
@@ -278,8 +308,9 @@ export default {
   },
   methods: {
     // 显示图片预览
-    showImagePreview(images) {
-      console.log('准备预览图片:', images)
+    showImagePreview(images, row) {
+      console.log('准备预览图片:', images, row)
+      this.clickScore = row
 
       if (!images || images.length === 0) {
         this.$message.warning('没有图片可预览')
@@ -301,78 +332,97 @@ export default {
 
       // 确保弹窗居中显示
       this.$nextTick(() => {
-        this.centerDialog();
-      });
+        this.centerDialog()
+        this.positionList = row.subjects.math.positioning1.map(item => {
+          return {
+            text: item.rating_msg,
+            style: {
+              position: 'absolute',
+              top: item.y * 0.8 + 'px',
+              left: item.x * 0.8 + 'px',
+              color: 'red'
+            }
+          }
+        })
+        this.positionList.push({
+          text: '总分：' + row.subjects.math.score,
+          style: {
+            position: 'absolute',
+            top: 0 + 'px',
+            left: 0 + 'px',
+            color: 'red',
+            fontSize: '16px',
+            fontWeight: 'bold'
+          }
+        })
+      })
     },
 
     // 使弹窗居中显示
     centerDialog() {
-      const dialog = this.$el.querySelector('.fixed-center-dialog .el-dialog');
+      const dialog = this.$el.querySelector('.fixed-center-dialog .el-dialog')
       if (dialog) {
         // 移除可能影响定位的样式
-        dialog.style.top = '50%';
-        dialog.style.left = '50%';
-        dialog.style.transform = 'translate(-50%, -50%)';
-        dialog.style.margin = '0';
+        dialog.style.top = '50%'
+        dialog.style.left = '50%'
+        dialog.style.transform = 'translate(-50%, -50%)'
+        dialog.style.margin = '0'
       }
     },
 
     // 关闭图片预览
     closePreview() {
-      this.previewVisible = false;
-      this.previewImageList = [];
-      this.currentImageIndex = 0;
+      this.previewVisible = false
+      this.previewImageList = []
+      this.currentImageIndex = 0
     },
-
 
     // 切换全屏状态
     toggleFullscreen() {
-        // 获取弹窗元素
-        const dialog = this.$refs.previewDialog?.$el.querySelector('.el-dialog');
+      // 获取弹窗元素
+      const dialog = this.$refs.previewDialog?.$el.querySelector('.el-dialog')
 
-        if (!dialog) {
-          console.error('无法获取弹窗元素');
-          this.$message.warning('全屏功能暂时不可用');
-          return;
-        }
+      if (!dialog) {
+        console.error('无法获取弹窗元素')
+        this.$message.warning('全屏功能暂时不可用')
+        return
+      }
 
-        if (!this.isFullscreen) {
-          this.enterFullscreen(dialog);
-        } else {
-          this.exitFullscreen();
-        }
-      },
+      if (!this.isFullscreen) {
+        this.enterFullscreen(dialog)
+      } else {
+        this.exitFullscreen()
+      }
+    },
 
-      // 进入全屏 - 接收弹窗元素作为参数
-      enterFullscreen(dialog) {
-        if (dialog.requestFullscreen) {
-          dialog.requestFullscreen().then(() => {
-            this.isFullscreen = true;
-            this.fullscreenElement = dialog;
-          }).catch(err => {
-            console.error(`进入全屏失败: ${err.message}`);
-            this.$message.error('无法进入全屏模式');
-          });
-        } else {
-          // 兼容旧浏览器
-          this.$message.warning('您的浏览器不支持全屏功能');
-        }
-      },
-
-
+    // 进入全屏 - 接收弹窗元素作为参数
+    enterFullscreen(dialog) {
+      if (dialog.requestFullscreen) {
+        dialog.requestFullscreen().then(() => {
+          this.isFullscreen = true
+          this.fullscreenElement = dialog
+        }).catch(err => {
+          console.error(`进入全屏失败: ${err.message}`)
+          this.$message.error('无法进入全屏模式')
+        })
+      } else {
+        // 兼容旧浏览器
+        this.$message.warning('您的浏览器不支持全屏功能')
+      }
+    },
 
     // 键盘事件处理
     handleKeyDown(e) {
       // ESC键退出全屏
       if (e.key === 'Escape' && this.isFullscreen) {
-        this.exitFullscreen();
+        this.exitFullscreen()
       }
       // 左右箭头切换图片
       if (this.previewVisible) {
         if (e.key === 'ArrowLeft') {
-          this.prevImage();
+          this.prevImage()
         } else if (e.key === 'ArrowRight') {
-          this.nextImage();
+          this.nextImage()
         }
       }
     },
@@ -380,108 +430,151 @@ export default {
     // 上一张图片
     prevImage() {
       if (this.currentImageIndex > 0) {
-        this.currentImageIndex--;
+        this.currentImageIndex--
+        this.positionList = this.clickScore.subjects.math.positioning1.map(item => {
+          return {
+            text: item.rating_msg,
+            style: {
+              position: 'absolute',
+              top: item.y * 0.8 + 'px',
+              left: item.x * 0.8 + 'px',
+              color: 'red'
+            }
+          }
+        })
+        this.positionList.push({
+          text: '总分：' + this.clickScore.subjects.math.score,
+          style: {
+            position: 'absolute',
+            top: 0 + 'px',
+            left: 0 + 'px',
+            color: 'red',
+            fontSize: '16px',
+            fontWeight: 'bold'
+          }
+        })
       }
     },
 
     // 下一张图片
     nextImage() {
       if (this.currentImageIndex < this.previewImageList.length - 1) {
-        this.currentImageIndex++;
+        this.currentImageIndex++
+        this.positionList = this.clickScore.subjects.math.positioning2.map(item => {
+          return {
+            text: item.rating_msg,
+            style: {
+              position: 'absolute',
+              top: item.y * 0.8 + 'px',
+              left: item.x * 0.8 + 'px',
+              color: 'red'
+            }
+          }
+        })
+        this.positionList.push({
+          text: '总分：' + this.clickScore.subjects.math.score,
+          style: {
+            position: 'absolute',
+            top: 0 + 'px',
+            left: 0 + 'px',
+            color: 'red',
+            fontSize: '16px',
+            fontWeight: 'bold'
+          }
+        })
       }
     },
 
     // 图片加载完成
     imageLoaded() {
-      this.imageLoading = false;
+      this.imageLoading = false
     },
-
 
     async fetchExamDetail() {
       try {
-        const token = Cookies.get('access');
+        const token = Cookies.get('access')
         const res = await request({
           url: `/sexam/exams/${this.examId}/`,
           method: 'get',
           headers: { Authorization: `Bearer ${token}` }
-        });
-        this.examOrganizationId = res.organization;
+        })
+        this.examOrganizationId = res.organization
       } catch (e) {
-        console.error('获取考试详情失败：', e);
-        Message.error('获取考试信息失败');
+        console.error('获取考试详情失败：', e)
+        Message.error('获取考试信息失败')
       }
     },
 
     async fetchClassOptions() {
-      if (this.examOrganizationId === null) return;
+      if (this.examOrganizationId === null) return
 
       try {
-        const token = Cookies.get('access');
+        const token = Cookies.get('access')
         const res = await request({
           url: '/school/school_orgs/options/',
           method: 'get',
           headers: { Authorization: `Bearer ${token}` }
-        });
-        this.classOptions = this.extractOnlyClassNodes(res, this.examOrganizationId);
+        })
+        this.classOptions = this.extractOnlyClassNodes(res, this.examOrganizationId)
       } catch (e) {
-        console.error('获取班级数据失败：', e);
-        Message.error('加载班级数据失败');
+        console.error('获取班级数据失败：', e)
+        Message.error('加载班级数据失败')
       }
     },
 
     extractOnlyClassNodes(data, targetOrgId) {
-      const classNodes = [];
-      const processedData = JSON.parse(JSON.stringify(data));
+      const classNodes = []
+      const processedData = JSON.parse(JSON.stringify(data))
 
       const findTargetSubtree = (nodes, targetId) => {
         for (const node of nodes) {
           if (node.id === targetId) {
-            return node;
+            return node
           }
 
           if (node.children && node.children.length > 0) {
-            const found = findTargetSubtree(node.children, targetId);
+            const found = findTargetSubtree(node.children, targetId)
             if (found) {
-              return found;
+              return found
             }
           }
         }
-        return null;
+        return null
       };
 
-      const targetSubtree = findTargetSubtree(processedData, targetOrgId);
-      if (!targetSubtree) return [];
+      const targetSubtree = findTargetSubtree(processedData, targetOrgId)
+      if (!targetSubtree) return []
 
       const collectClassNodes = (node) => {
         if (node.org_type === 'class') {
           classNodes.push({
             id: node.id,
             label: node.label
-          });
-          return;
+          })
+          return
         }
 
         if (node.children && node.children.length > 0) {
-          node.children.forEach(child => collectClassNodes(child));
+          node.children.forEach(child => collectClassNodes(child))
         }
-      };
+      }
 
-      collectClassNodes(targetSubtree);
-      return classNodes;
+      collectClassNodes(targetSubtree)
+      return classNodes
     },
 
     async fetchScoreData() {
-      this.loading = true;
+      this.loading = true
       try {
-        const token = Cookies.get('access');
+        const token = Cookies.get('access')
         const params = {
           exam_id: this.examId
-        };
+        }
         // 总分情况下不传递学科参数，获取所有学科数据
-        if (this.selectedClass) params.organization_id = this.selectedClass;
+        if (this.selectedClass) params.organization_id = this.selectedClass
         // 只有当选择具体学科时才传递学科参数
         if (this.selectedSubject && this.selectedSubject !== 'total') {
-          params.subject_code = this.selectedSubject;
+          params.subject_code = this.selectedSubject
         }
 
         const res = await request({
@@ -489,132 +582,153 @@ export default {
           method: 'get',
           headers: { Authorization: `Bearer ${token}` },
           params
-        });
+        })
 
-        this.scoreData = res.students_grades_dict || {};
-        this.applyFilter();
+        this.scoreData = res.students_grades_dict || {}
+        this.applyFilter()
       } catch (e) {
-        console.error('获取成绩数据失败：', e);
-        Message.error('加载成绩数据失败');
-        this.scoreData = {};
-        this.filteredScoreList = [];
+        console.error('获取成绩数据失败：', e)
+        Message.error('加载成绩数据失败')
+        this.scoreData = {}
+        this.filteredScoreList = []
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
 
     applyFilter() {
       if (Object.keys(this.scoreData).length === 0) {
-        this.filteredScoreList = [];
-        this.displayedSubjects = {};
-        return;
+        this.filteredScoreList = []
+        this.displayedSubjects = {}
+        return
       }
 
-      const subject = this.selectedSubject;
-      const classId = this.selectedClass;
-      const result = [];
-      const subjectsSet = new Set();
+      const subject = this.selectedSubject
+      const classId = this.selectedClass
+      const result = []
+      const subjectsSet = new Set()
 
       // 收集所有需要显示的学科
       if (subject && subject !== 'total') {
         // 选择了具体学科，只显示该学科
-        subjectsSet.add(subject);
+        subjectsSet.add(subject)
       } else {
         // 总分情况下，显示所有学科
         Object.keys(this.scoreData).forEach(studentName => {
-          const studentSubjects = this.scoreData[studentName];
+          const studentSubjects = this.scoreData[studentName]
           // 排除组织信息，只处理学科数据
           Object.keys(studentSubjects).forEach(subj => {
             if (!['organization_id', 'organization_name'].includes(subj)) {
-              subjectsSet.add(subj);
+              subjectsSet.add(subj)
             }
-          });
-        });
+          })
+        })
       }
 
       // 转换为有序的学科对象，确保总分在最前面
-      this.displayedSubjects = {};
+      this.displayedSubjects = {}
       // 先添加总分（如果存在）
       if (subjectsSet.has('total')) {
-        this.displayedSubjects.total = this.SUBJECT_TYPES.total;
-        subjectsSet.delete('total');
+        this.displayedSubjects.total = this.SUBJECT_TYPES.total
+        subjectsSet.delete('total')
       }
       // 再添加其他学科
       Array.from(subjectsSet).forEach(subj => {
-        this.displayedSubjects[subj] = this.SUBJECT_TYPES[subj] || subj;
-      });
+        this.displayedSubjects[subj] = this.SUBJECT_TYPES[subj] || subj
+      })
 
       // 处理学生数据
       Object.keys(this.scoreData).forEach(studentName => {
-        const studentInfo = this.scoreData[studentName];
+        const studentInfo = this.scoreData[studentName]
         const studentData = {
           studentName,
           className: studentInfo.organization_name || '',
           subjects: {}
-        };
+        }
 
         // 检查是否符合班级筛选条件
-        const isMatchClass = !classId || studentInfo.organization_id === classId;
+        const isMatchClass = !classId || studentInfo.organization_id === classId
 
         if (!isMatchClass) {
-          return; // 不符合班级筛选条件，跳过该学生
+          return // 不符合班级筛选条件，跳过该学生
         }
 
         // 处理每个学科的数据
         Object.keys(this.displayedSubjects).forEach(subj => {
-          const subjectData = studentInfo[subj] || {};
+          const subjectData = studentInfo[subj] || {}
 
           // 收集图片文件并添加BASE_URL前缀
-          const imageFiles = [];
+          const imageFiles = []
           if (subjectData.answers_parse_image_file1) {
-            imageFiles.push(addBaseUrlToImage(subjectData.answers_parse_image_file1));
+            imageFiles.push(addBaseUrlToImage(subjectData.answers_parse_image_file1))
           }
           if (subjectData.answers_parse_image_file2) {
-            imageFiles.push(addBaseUrlToImage(subjectData.answers_parse_image_file2));
+            imageFiles.push(addBaseUrlToImage(subjectData.answers_parse_image_file2))
           }
 
           studentData.subjects[subj] = {
+            id: subjectData.id,
             score: subjectData.score || '',
             classRank: subjectData.class_rank,
             schoolRank: subjectData.school_rank,
             imageFiles,
-            hasImage: imageFiles.length > 0
-          };
-        });
+            hasImage: imageFiles.length > 0,
+            positioning1: subjectData.positioning1,
+            positioning2: subjectData.positioning2
+          }
+        })
 
         // 只有当学生有符合条件的学科数据时才添加
         if (Object.keys(studentData.subjects).length > 0) {
-          result.push(studentData);
+          result.push(studentData)
         }
-      });
+      })
 
-      this.filteredScoreList = result;
+      this.filteredScoreList = result
+    },
+    async handleReport() {
+      console.log(this.clickScore)
+      const token = Cookies.get('access')
+      const params = {
+        grade_id: this.clickScore.subjects.math.id
+      }
+      await request({
+        url: '/sexam/student_answers_details/',
+        method: 'post',
+        headers: { Authorization: `Bearer ${token}` },
+        data: params
+      }).then(res => {
+        this.markdownContent = res.details || '暂无报告内容'
+        this.reportVisible = true
+      }).catch(err => {
+        this.$message.error(err || '获取报告失败')
+      })
     }
   },
   watch: {
     '$route.params.id'(newVal) {
       if (newVal && newVal !== this.examId) {
-        this.examId = newVal;
-        this.examOrganizationId = null;
+        this.examId = newVal
+        this.examOrganizationId = null
         this.fetchExamDetail().then(() => {
-          this.fetchClassOptions();
-          this.fetchScoreData();
-        });
+          this.fetchClassOptions()
+          this.fetchScoreData()
+        })
       }
     },
     // 监听弹窗显示状态变化，确保居中
     previewVisible(newVal) {
       if (newVal) {
         this.$nextTick(() => {
-          this.centerDialog();
-        });
+          this.centerDialog()
+        })
       }
     }
   }
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 /* 基础样式保持不变 */
 .app-container {
   padding: 16px;
@@ -674,8 +788,6 @@ export default {
   -webkit-transform: rotateX(180deg);
 }
 
-
-
 .score-table {
   width: 100%;
   min-width: 800px;
@@ -732,7 +844,7 @@ export default {
 
 .image-preview-container {
   width: 100%;
-  height: 60vh; /* 固定高度，不随内容变化 */
+  height: 80vh; /* 固定高度，不随内容变化 */
   min-height: 400px;
   max-height: 80vh;
   display: flex;
@@ -740,8 +852,8 @@ export default {
 }
 
 .image-wrapper {
-  width: 100%;
-  height: 100%;
+  width: 950px;
+  height: 674px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -907,6 +1019,12 @@ export default {
   .image-preview-container {
     height: 50vh;
     min-height: 300px;
+  }
+}
+::v-deep .report-dialog {
+  .el-dialog__body {
+    max-height: 100vh - 30vh;
+    overflow-y: auto;
   }
 }
 </style>
