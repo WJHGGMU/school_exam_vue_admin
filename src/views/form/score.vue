@@ -91,7 +91,7 @@
                 <span
                   v-else
                   class="score-with-image"
-                  @click="showImagePreview(scope.row.subjects[subjectCode].imageFiles, scope.row)"
+                  @click="showImagePreview(scope.row.subjects[subjectCode].imageFiles, scope.row, subjectCode)"
                   style="cursor: pointer"
                 >
                   {{ scope.row.subjects[subjectCode].score || '-' }}
@@ -203,9 +203,9 @@
       :visible.sync="reportVisible"
       width="50%"
       class="report-dialog"
-      @close="reportVisible = false"
+      @close="closeReport"
     >
-      <vue-markdown>{{ markdownContent }}</vue-markdown>
+      <vue-markdown :source="markdownContent" />
     </el-dialog>
   </div>
 </template>
@@ -288,7 +288,8 @@ export default {
       positionList: [],
       clickScore: {},
       markdownContent: '',
-      reportVisible: false
+      reportVisible: false,
+      clickSubjectCode: ''
     }
   },
   created() {
@@ -308,9 +309,10 @@ export default {
   },
   methods: {
     // 显示图片预览
-    showImagePreview(images, row) {
-      console.log('准备预览图片:', images, row)
+    showImagePreview(images, row, subjectCode) {
+      console.log('准备预览图片:', images, row, subjectCode)
       this.clickScore = row
+      this.clickSubjectCode = subjectCode
 
       if (!images || images.length === 0) {
         this.$message.warning('没有图片可预览')
@@ -333,19 +335,21 @@ export default {
       // 确保弹窗居中显示
       this.$nextTick(() => {
         this.centerDialog()
-        this.positionList = row.subjects.math.positioning1.map(item => {
+        this.positionList = row.subjects[subjectCode].positioning1.map(item => {
           return {
             text: item.rating_msg,
             style: {
               position: 'absolute',
               top: item.y * 0.8 + 'px',
               left: item.x * 0.8 + 'px',
-              color: 'red'
+              color: 'red',
+              width: item.width * 0.8 + 'px',
+              height: item.height * 0.8 + 'px'
             }
           }
         })
         this.positionList.push({
-          text: '总分：' + row.subjects.math.score,
+          text: '总分：' + row.subjects[subjectCode].score,
           style: {
             position: 'absolute',
             top: 0 + 'px',
@@ -374,7 +378,7 @@ export default {
     closePreview() {
       this.previewVisible = false
       this.previewImageList = []
-      this.currentImageIndex = 0
+      this.positionList = []
     },
 
     // 切换全屏状态
@@ -431,19 +435,21 @@ export default {
     prevImage() {
       if (this.currentImageIndex > 0) {
         this.currentImageIndex--
-        this.positionList = this.clickScore.subjects.math.positioning1.map(item => {
+        this.positionList = this.clickScore.subjects[this.clickSubjectCode].positioning1.map(item => {
           return {
             text: item.rating_msg,
             style: {
               position: 'absolute',
               top: item.y * 0.8 + 'px',
               left: item.x * 0.8 + 'px',
-              color: 'red'
+              color: 'red',
+              width: item.width * 0.8 + 'px',
+              height: item.height * 0.8 + 'px'
             }
           }
         })
         this.positionList.push({
-          text: '总分：' + this.clickScore.subjects.math.score,
+          text: '总分：' + this.clickScore.subjects[this.clickSubjectCode].score,
           style: {
             position: 'absolute',
             top: 0 + 'px',
@@ -460,19 +466,21 @@ export default {
     nextImage() {
       if (this.currentImageIndex < this.previewImageList.length - 1) {
         this.currentImageIndex++
-        this.positionList = this.clickScore.subjects.math.positioning2.map(item => {
+        this.positionList = this.clickScore.subjects[this.clickSubjectCode].positioning2.map(item => {
           return {
             text: item.rating_msg,
             style: {
               position: 'absolute',
               top: item.y * 0.8 + 'px',
               left: item.x * 0.8 + 'px',
-              color: 'red'
+              color: 'red',
+              width: item.width * 0.8 + 'px',
+              height: item.height * 0.8 + 'px'
             }
           }
         })
         this.positionList.push({
-          text: '总分：' + this.clickScore.subjects.math.score,
+          text: '总分：' + this.clickScore.subjects[this.clickSubjectCode].score,
           style: {
             position: 'absolute',
             top: 0 + 'px',
@@ -690,7 +698,7 @@ export default {
       console.log(this.clickScore)
       const token = Cookies.get('access')
       const params = {
-        grade_id: this.clickScore.subjects.math.id
+        grade_id: this.clickScore.subjects[this.clickSubjectCode].id
       }
       await request({
         url: '/sexam/student_answers_details/',
@@ -699,10 +707,15 @@ export default {
         data: params
       }).then(res => {
         this.markdownContent = res.details || '暂无报告内容'
+        console.log(this.markdownContent, 'zz')
         this.reportVisible = true
       }).catch(err => {
         this.$message.error(err || '获取报告失败')
       })
+    },
+    closeReport() {
+      this.reportVisible = false
+      this.markdownContent = ''
     }
   },
   watch: {
