@@ -32,172 +32,154 @@
       </el-select>
     </div>
 
-    <!-- 成绩表格 - 支持横向滚动 -->
-    <div class="table-container">
-      <el-table
-        :data="filteredScoreList"
-        border
-        stripe
-        class="score-table"
-        v-loading="loading"
-        element-loading-text="正在加载成绩数据..."
-      >
-        <!-- 基础列 - 序号、班级、姓名 -->
-        <el-table-column
-          type="index"
-          label="序号"
-          width="60"
-          align="center"
-          fixed
-        ></el-table-column>
-        <el-table-column
-          prop="className"
-          label="班级"
-          align="center"
-          min-width="120"
-          fixed
-        ></el-table-column>
-        <el-table-column
-          prop="studentName"
-          label="姓名"
-          align="center"
-          min-width="100"
-          fixed
-        ></el-table-column>
-
-        <!-- 动态生成的学科列 - 两层表头 -->
-        <template v-for="(subject, subjectCode) in displayedSubjects">
-          <el-table-column
-            :key="subjectCode"
-            :label="subject"
-            align="center"
-            :min-width="300"
+    <!-- 成绩表格容器 - 修改滚动结构，确保横向滚动条始终可见 -->
+    <div class="table-container-outer">
+      <!-- 外层容器负责横向滚动，始终显示滚动条 -->
+      <div class="table-wrapper">
+        <!-- 内层容器负责纵向滚动 -->
+        <div class="table-container-inner">
+          <el-table
+            :data="filteredScoreList"
+            border
+            stripe
+            class="score-table"
+            v-loading="loading"
+            element-loading-text="正在加载成绩数据..."
           >
-            <!-- 第二层表头：成绩、班排名、校排名 -->
             <el-table-column
+              type="index"
+              label="序号"
+              width="60"
+              align="center"
+              fixed
+            ></el-table-column>
+            <el-table-column
+              prop="className"
+              label="班级"
+              align="center"
+              min-width="120"
+              fixed
+            ></el-table-column>
+            <el-table-column
+              prop="studentName"
+              label="姓名"
               align="center"
               min-width="100"
-            >
-              <template slot="header">成绩</template>
-              <template slot-scope="scope">
-                <span
-                  v-if="!scope.row.subjects[subjectCode].hasImage"
-                  :class="{ 'no-score': !scope.row.subjects[subjectCode].score }"
-                >
-                  {{ scope.row.subjects[subjectCode].score || '-' }}
-                </span>
+              fixed
+            ></el-table-column>
 
-                <!-- 可点击的绿色带下划线成绩值 -->
-                <span
-                  v-else
-                  class="score-with-image"
-                  @click="showImagePreview(scope.row.subjects[subjectCode].imageFiles, scope.row)"
-                  style="cursor: pointer"
+            <template v-for="(subject, subjectCode) in displayedSubjects">
+              <el-table-column
+                :key="subjectCode"
+                :label="subject"
+                align="center"
+                :min-width="300"
+              >
+                <el-table-column
+                  align="center"
+                  min-width="100"
                 >
-                  {{ scope.row.subjects[subjectCode].score || '-' }}
-                </span>
-              </template>
-            </el-table-column>
-            <el-table-column
-              align="center"
-              min-width="100"
-            >
-              <template slot="header">班排名</template>
-              <template slot-scope="scope">
-                {{ scope.row.subjects[subjectCode].classRank || '-' }}
-              </template>
-            </el-table-column>
-            <el-table-column
-              align="center"
-              min-width="100"
-            >
-              <template slot="header">校排名</template>
-              <template slot-scope="scope">
-                {{ scope.row.subjects[subjectCode].schoolRank || '-' }}
-              </template>
-            </el-table-column>
-          </el-table-column>
-        </template>
-      </el-table>
+                  <template slot="header">成绩</template>
+                  <template slot-scope="scope">
+                    <span
+                      v-if="!scope.row.subjects[subjectCode].hasImage"
+                      :class="{ 'no-score': !scope.row.subjects[subjectCode].score }"
+                    >
+                      {{ scope.row.subjects[subjectCode].score || '-' }}
+                    </span>
+                    <span
+                      v-else
+                      class="score-with-image"
+                      @click="showImagePreview(scope.row.subjects[subjectCode].imageFiles, scope.row)"
+                      style="cursor: pointer"
+                    >
+                      {{ scope.row.subjects[subjectCode].score || '-' }}
+                    </span>
+                  </template>
+                </el-table-column>
+                <el-table-column
+                  align="center"
+                  min-width="100"
+                >
+                  <template slot="header">班排名</template>
+                  <template slot-scope="scope">
+                    {{ scope.row.subjects[subjectCode].classRank || '-' }}
+                  </template>
+                </el-table-column>
+                <el-table-column
+                  align="center"
+                  min-width="100"
+                >
+                  <template slot="header">校排名</template>
+                  <template slot-scope="scope">
+                    {{ scope.row.subjects[subjectCode].schoolRank || '-' }}
+                  </template>
+                </el-table-column>
+              </el-table-column>
+            </template>
+          </el-table>
+        </div>
+      </div>
     </div>
 
-    <!-- 空数据状态 -->
     <div v-if="!loading && filteredScoreList.length === 0" class="empty-state">
       <el-empty description="暂无成绩数据"></el-empty>
     </div>
 
-    <!-- 图片预览弹窗-->
+    <!-- 图片预览弹窗 -->
     <el-dialog
-      ref="previewDialog"
-      top="3vh"
-      width="52%"
-      :visible.sync="previewVisible"
-      :fullscreen="isFullscreen"
-      :show-close="true"
-      @close="closePreview"
-      :modal-append-to-body="false"
-      :append-to-body="true"
-      class="fixed-center-dialog"
-    >
-      <template slot="title">
-        <div style="display: flex;justify-content: space-between">
-          <span>图片预览 (共 {{ previewImageList.length }} 张)</span>
-          <el-button type="primary" size="small" style="margin-right: 40px;" @click="handleReport">批改报告</el-button>
-        </div>
-      </template>
-      <div class="image-preview-container">
-        <!-- 图片容器 -->
-        <div
-          class="image-wrapper"
+          ref="previewDialog"
+          top="3vh"
+          width="52%"
+          :visible.sync="previewVisible"
+          :fullscreen="isFullscreen"
+          :show-close="true"
+          @close="closePreview"
+          :modal-append-to-body="false"
+          :append-to-body="true"
+          class="fixed-center-dialog"
         >
-          <el-image
-            :src="previewImageList[currentImageIndex]"
-            :alt="`预览图片 ${currentImageIndex + 1}`"
-            fit="contain"
-            :preview-src-list="[previewImageList[currentImageIndex]]"
+          <template slot="title">
+            <div style="display: flex;justify-content: space-between">
+              <span>图片预览 (共 {{ previewImageList.length }} 张)</span>
+              <el-button type="primary" size="small" style="margin-right: 40px;" @click="handleReport">批改报告</el-button>
+            </div>
+          </template>
+      <div class="image-preview-container">
+        <div class="image-wrapper" @click="toggleFullscreen">
+          <img
+            :src="addBaseUrlToImage(previewImageList[currentImageIndex])"
+            alt="成绩图片预览"
             class="preview-image"
+            :class="{ 'image-loading': imageLoading }"
             @load="imageLoaded"
-          />
-          <div
-            v-for="(item, index) in positionList"
-            :key="index"
-            :class="item.class"
-            :style="item.style"
+            @error="imageLoading = false"
           >
+          <div v-for="(item, index) in positionList" :key="index" :style="item.style">
             {{ item.text }}
           </div>
-          <!-- 点击提示 -->
           <div v-if="!isFullscreen" class="click-to-fullscreen-hint">
-            点击图片进入全屏查看
+            点击图片进入全屏模式
           </div>
-          <!-- 退出全屏提示 -->
           <div v-if="isFullscreen" class="exit-fullscreen-hint">
-            点击图片退出全屏 | 按ESC键退出
+            点击图片退出全屏模式
           </div>
         </div>
-
-        <!-- 图片导航 -->
         <div class="image-nav">
-          <span
-            class="nav-btn prev-btn"
-            @click="prevImage"
-            :disabled="currentImageIndex === 0"
-          >
+          <div class="nav-btn prev-btn" @click="prevImage" :disabled="currentImageIndex <= 0">
             <i class="el-icon-arrow-left"></i> 上一张
-          </span>
-          <span class="image-counter">
+          </div>
+          <div class="image-counter">
             {{ currentImageIndex + 1 }} / {{ previewImageList.length }}
-          </span>
-          <span
-            class="nav-btn next-btn"
-            @click="nextImage"
-            :disabled="currentImageIndex === previewImageList.length - 1"
-          >
+          </div>
+          <div class="nav-btn next-btn" @click="nextImage" :disabled="currentImageIndex >= previewImageList.length - 1">
             下一张 <i class="el-icon-arrow-right"></i>
-          </span>
+          </div>
         </div>
       </div>
     </el-dialog>
+
+    <!-- 批改报告弹窗 -->
     <el-dialog
       title="批改报告"
       :visible.sync="reportVisible"
@@ -217,27 +199,6 @@ import Cookies from 'js-cookie'
 import { Empty, Table, TableColumn, Select, Option, Message, Dialog, Icon } from 'element-ui'
 import VueMarkdown from 'vue-markdown'
 
-// 辅助函数：为图片路径添加BASE_URL前缀
-const addBaseUrlToImage = (imagePath) => {
-  // 确保BASE_URL是字符串类型
-  const baseUrlStr = typeof BASE_URL === 'string' ? BASE_URL : ''
-
-  // 检查路径是否已经是完整URL
-  if (imagePath && (imagePath.startsWith('http://') || imagePath.startsWith('https://'))) {
-    return imagePath
-  }
-
-  // 如果没有有效的BASE_URL或imagePath，直接返回
-  if (!baseUrlStr || !imagePath) {
-    return imagePath || ''
-  }
-
-  // 确保BASE_URL末尾和imagePath开头没有重复的斜杠
-  const base = baseUrlStr.endsWith('/') ? baseUrlStr.slice(0, -1) : baseUrlStr
-  const path = imagePath.startsWith('/') ? imagePath : `/${imagePath}`
-  return `${base}${path}`
-}
-
 export default {
   components: {
     ElEmpty: Empty,
@@ -253,9 +214,8 @@ export default {
     return {
       examId: this.$route.params.id,
       examOrganizationId: null,
-
       SUBJECT_TYPES: {
-        total: '总分', // 确保总分是第一个选项
+        total: '总分',
         chinese: '语文',
         math: '数学',
         english: '英语',
@@ -268,27 +228,23 @@ export default {
         science: '科学'
       },
       classOptions: [],
-      selectedSubject: 'total', // 默认选择总分
+      selectedSubject: 'total',
       selectedClass: null,
-
-      // 显示的学科列表（用于动态生成表头）
       displayedSubjects: {},
-
       scoreData: {},
       filteredScoreList: [],
       loading: true,
-
-      // 图片预览相关
       previewVisible: false,
       previewImageList: [],
       currentImageIndex: 0,
       imageLoading: false,
-      isFullscreen: false, // 控制是否全屏显示
-      fullscreenElement: null, // 记录全屏元素
+      isFullscreen: false,
+      fullscreenElement: null,
       positionList: [],
       clickScore: {},
       markdownContent: '',
-      reportVisible: false
+      reportVisible: false,
+      scrollTop: 0
     }
   },
   created() {
@@ -296,18 +252,85 @@ export default {
       this.fetchClassOptions()
       this.fetchScoreData()
     })
-
-    // 监听ESC键，退出全屏
     document.addEventListener('keydown', this.handleKeyDown)
+
+    // 同步固定列和内容列的滚动
+    this.$nextTick(() => {
+      const table = this.$el.querySelector('.score-table')
+      const bodyWrapper = table?.querySelector('.el-table__body-wrapper')
+      const fixedBody = table?.querySelector('.el-table__fixed-body-wrapper')
+
+      if (!bodyWrapper || !fixedBody) return
+
+      const syncScroll = () => {
+        fixedBody.style.paddingTop = bodyWrapper.scrollTop + 'px'
+      }
+
+      bodyWrapper.addEventListener('scroll', syncScroll)
+
+      this.$once('hook:beforeDestroy', () => {
+        bodyWrapper.removeEventListener('scroll', syncScroll)
+      })
+    })
   },
   beforeDestroy() {
-    // 移除事件监听
     document.removeEventListener('keydown', this.handleKeyDown)
-    // 确保退出全屏
-    this.exitFullscreen()
+    this.enablePageScroll()
+  },
+  mounted() {
+    this.disablePageScroll();
+
+    // 监听表格渲染完成，确保滚动同步
+    const observer = new MutationObserver(() => {
+      const table = this.$el.querySelector('.score-table')
+      const bodyWrapper = table?.querySelector('.el-table__body-wrapper')
+      const fixedBody = table?.querySelector('.el-table__fixed-body-wrapper')
+
+      if (bodyWrapper && fixedBody) {
+        const syncScroll = () => {
+          fixedBody.style.paddingTop = bodyWrapper.scrollTop + 'px'
+        }
+
+        bodyWrapper.addEventListener('scroll', syncScroll)
+        observer.disconnect()
+
+        this.$once('hook:beforeDestroy', () => {
+          bodyWrapper.removeEventListener('scroll', syncScroll)
+        })
+      }
+    })
+
+    observer.observe(this.$el, { childList: true, subtree: true })
   },
   methods: {
-    // 显示图片预览
+    addBaseUrlToImage(imagePath) {
+      const baseUrlStr = typeof BASE_URL === 'string' ? BASE_URL : ''
+      if (imagePath && (imagePath.startsWith('http://') || imagePath.startsWith('https://'))) {
+        return imagePath
+      }
+      if (!baseUrlStr || !imagePath) {
+        return imagePath || ''
+      }
+      const base = baseUrlStr.endsWith('/') ? baseUrlStr.slice(0, -1) : baseUrlStr
+      const path = imagePath.startsWith('/') ? imagePath : `/${imagePath}`
+      return `${base}${path}`
+    },
+    disablePageScroll() {
+      this.scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${this.scrollTop}px`
+      document.body.style.left = '0'
+      document.body.style.right = '0'
+      document.body.style.overflow = 'hidden'
+    },
+    enablePageScroll() {
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.left = ''
+      document.body.style.right = ''
+      document.body.style.overflow = ''
+      window.scrollTo(0, this.scrollTop)
+    },
     showImagePreview(images, row) {
       console.log('准备预览图片:', images, row)
       this.clickScore = row
@@ -317,20 +340,18 @@ export default {
         return
       }
 
-      // 验证图片URL是否有效
       const validImages = images.filter(img => img && img.trim() !== '')
       if (validImages.length === 0) {
         this.$message.error('图片URL无效')
         return
       }
 
-      // 设置预览图片列表并显示预览弹窗
+      this.disablePageScroll()
       this.previewImageList = validImages
       this.currentImageIndex = 0
-      this.isFullscreen = false // 默认不全屏
+      this.isFullscreen = false
       this.previewVisible = true
 
-      // 确保弹窗居中显示
       this.$nextTick(() => {
         this.centerDialog()
         this.positionList = row.subjects.math.positioning1.map(item => {
@@ -357,29 +378,22 @@ export default {
         })
       })
     },
-
-    // 使弹窗居中显示
     centerDialog() {
       const dialog = this.$el.querySelector('.fixed-center-dialog .el-dialog')
       if (dialog) {
-        // 移除可能影响定位的样式
         dialog.style.top = '50%'
         dialog.style.left = '50%'
         dialog.style.transform = 'translate(-50%, -50%)'
         dialog.style.margin = '0'
       }
     },
-
-    // 关闭图片预览
     closePreview() {
       this.previewVisible = false
       this.previewImageList = []
       this.currentImageIndex = 0
+      this.enablePageScroll()
     },
-
-    // 切换全屏状态
     toggleFullscreen() {
-      // 获取弹窗元素
       const dialog = this.$refs.previewDialog?.$el.querySelector('.el-dialog')
 
       if (!dialog) {
@@ -394,8 +408,6 @@ export default {
         this.exitFullscreen()
       }
     },
-
-    // 进入全屏 - 接收弹窗元素作为参数
     enterFullscreen(dialog) {
       if (dialog.requestFullscreen) {
         dialog.requestFullscreen().then(() => {
@@ -406,18 +418,20 @@ export default {
           this.$message.error('无法进入全屏模式')
         })
       } else {
-        // 兼容旧浏览器
         this.$message.warning('您的浏览器不支持全屏功能')
       }
     },
-
-    // 键盘事件处理
-    handleKeyDown(e) {
-      // ESC键退出全屏
-      if (e.key === 'Escape' && this.isFullscreen) {
-        this.exitFullscreen()
+    exitFullscreen() {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().then(() => {
+          this.isFullscreen = false
+          this.fullscreenElement = null
+        }).catch(err => {
+          console.error(`退出全屏失败: ${err.message}`)
+        })
       }
-      // 左右箭头切换图片
+    },
+    handleKeyDown(e) {
       if (this.previewVisible) {
         if (e.key === 'ArrowLeft') {
           this.prevImage()
@@ -425,9 +439,19 @@ export default {
           this.nextImage()
         }
       }
-    },
 
-    // 上一张图片
+      if (e.key === 'Escape') {
+        if (this.isFullscreen) {
+          this.exitFullscreen()
+        }
+        if (this.previewVisible) {
+          this.closePreview()
+        }
+        if (this.reportVisible) {
+          this.reportVisible = false
+        }
+      }
+    },
     prevImage() {
       if (this.currentImageIndex > 0) {
         this.currentImageIndex--
@@ -455,8 +479,6 @@ export default {
         })
       }
     },
-
-    // 下一张图片
     nextImage() {
       if (this.currentImageIndex < this.previewImageList.length - 1) {
         this.currentImageIndex++
@@ -484,12 +506,9 @@ export default {
         })
       }
     },
-
-    // 图片加载完成
     imageLoaded() {
       this.imageLoading = false
     },
-
     async fetchExamDetail() {
       try {
         const token = Cookies.get('access')
@@ -504,7 +523,6 @@ export default {
         Message.error('获取考试信息失败')
       }
     },
-
     async fetchClassOptions() {
       if (this.examOrganizationId === null) return
 
@@ -521,7 +539,6 @@ export default {
         Message.error('加载班级数据失败')
       }
     },
-
     extractOnlyClassNodes(data, targetOrgId) {
       const classNodes = []
       const processedData = JSON.parse(JSON.stringify(data))
@@ -562,7 +579,6 @@ export default {
       collectClassNodes(targetSubtree)
       return classNodes
     },
-
     async fetchScoreData() {
       this.loading = true
       try {
@@ -570,9 +586,7 @@ export default {
         const params = {
           exam_id: this.examId
         }
-        // 总分情况下不传递学科参数，获取所有学科数据
         if (this.selectedClass) params.organization_id = this.selectedClass
-        // 只有当选择具体学科时才传递学科参数
         if (this.selectedSubject && this.selectedSubject !== 'total') {
           params.subject_code = this.selectedSubject
         }
@@ -595,7 +609,6 @@ export default {
         this.loading = false
       }
     },
-
     applyFilter() {
       if (Object.keys(this.scoreData).length === 0) {
         this.filteredScoreList = []
@@ -608,15 +621,11 @@ export default {
       const result = []
       const subjectsSet = new Set()
 
-      // 收集所有需要显示的学科
       if (subject && subject !== 'total') {
-        // 选择了具体学科，只显示该学科
         subjectsSet.add(subject)
       } else {
-        // 总分情况下，显示所有学科
         Object.keys(this.scoreData).forEach(studentName => {
           const studentSubjects = this.scoreData[studentName]
-          // 排除组织信息，只处理学科数据
           Object.keys(studentSubjects).forEach(subj => {
             if (!['organization_id', 'organization_name'].includes(subj)) {
               subjectsSet.add(subj)
@@ -625,19 +634,15 @@ export default {
         })
       }
 
-      // 转换为有序的学科对象，确保总分在最前面
       this.displayedSubjects = {}
-      // 先添加总分（如果存在）
       if (subjectsSet.has('total')) {
         this.displayedSubjects.total = this.SUBJECT_TYPES.total
         subjectsSet.delete('total')
       }
-      // 再添加其他学科
       Array.from(subjectsSet).forEach(subj => {
         this.displayedSubjects[subj] = this.SUBJECT_TYPES[subj] || subj
       })
 
-      // 处理学生数据
       Object.keys(this.scoreData).forEach(studentName => {
         const studentInfo = this.scoreData[studentName]
         const studentData = {
@@ -646,24 +651,21 @@ export default {
           subjects: {}
         }
 
-        // 检查是否符合班级筛选条件
         const isMatchClass = !classId || studentInfo.organization_id === classId
 
         if (!isMatchClass) {
-          return // 不符合班级筛选条件，跳过该学生
+          return
         }
 
-        // 处理每个学科的数据
         Object.keys(this.displayedSubjects).forEach(subj => {
           const subjectData = studentInfo[subj] || {}
 
-          // 收集图片文件并添加BASE_URL前缀
           const imageFiles = []
           if (subjectData.answers_parse_image_file1) {
-            imageFiles.push(addBaseUrlToImage(subjectData.answers_parse_image_file1))
+            imageFiles.push(subjectData.answers_parse_image_file1)
           }
           if (subjectData.answers_parse_image_file2) {
-            imageFiles.push(addBaseUrlToImage(subjectData.answers_parse_image_file2))
+            imageFiles.push(subjectData.answers_parse_image_file2)
           }
 
           studentData.subjects[subj] = {
@@ -678,7 +680,6 @@ export default {
           }
         })
 
-        // 只有当学生有符合条件的学科数据时才添加
         if (Object.keys(studentData.subjects).length > 0) {
           result.push(studentData)
         }
@@ -700,6 +701,7 @@ export default {
       }).then(res => {
         this.markdownContent = res.details || '暂无报告内容'
         this.reportVisible = true
+        this.disablePageScroll()
       }).catch(err => {
         this.$message.error(err || '获取报告失败')
       })
@@ -716,12 +718,20 @@ export default {
         })
       }
     },
-    // 监听弹窗显示状态变化，确保居中
     previewVisible(newVal) {
       if (newVal) {
         this.$nextTick(() => {
           this.centerDialog()
         })
+      } else {
+        this.enablePageScroll()
+      }
+    },
+    reportVisible(newVal) {
+      if (!newVal) {
+        if (!this.previewVisible) {
+          this.enablePageScroll()
+        }
       }
     }
   }
@@ -729,7 +739,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/* 基础样式保持不变 */
 .app-container {
   padding: 16px;
   box-sizing: border-box;
@@ -737,7 +746,7 @@ export default {
   margin: 0 auto;
   background-color: #fff;
   min-height: 100vh;
-  position: relative; /* 确保弹窗定位相对于此容器 */
+  position: relative;
 }
 
 .filter-container {
@@ -759,33 +768,51 @@ export default {
   min-width: 200px;
 }
 
-/* 外层容器不翻转，仅控制溢出 */
-.table-container {
+/* 表格容器结构调整 - 关键修改 */
+.table-container-outer {
   width: 100%;
-  overflow: hidden; /* 隐藏溢出，避免外层滚动条 */
   margin-bottom: 20px;
+  /* 确保容器不会被内容撑开 */
+  overflow: hidden;
 }
 
-/* 针对 Element UI 表格的滚动容器进行翻转 */
-::v-deep .el-table__body-wrapper {
+.table-wrapper {
+  /* 外层容器负责横向滚动，始终显示滚动条 */
+  width: 100%;
   overflow-x: auto;
-  transform: rotateX(180deg);
-  -ms-transform: rotateX(180deg);
-  -webkit-transform: rotateX(180deg);
+  overflow-x: scroll !important;
+  /* 强制显示横向滚动条 */
+  scrollbar-width: auto;
+
+  /* WebKit 浏览器强制显示滚动条 */
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
 }
 
-/* 表格内容（tbody）再翻转回来 */
-::v-deep .el-table__body {
-  transform: rotateX(180deg);
-  -ms-transform: rotateX(180deg);
-  -webkit-transform: rotateX(180deg);
-  min-width: 800px; /* 确保内容宽度触发滚动 */
-}
-
-::v-deep .el-table__fixed-body-wrapper {
-  transform: rotateX(180deg);
-  -ms-transform: rotateX(180deg);
-  -webkit-transform: rotateX(180deg);
+.table-container-inner {
+  /* 内层容器负责纵向滚动 */
+  height: 70vh;
+  overflow-y: auto;
+  /* 确保内容宽度足够触发横向滚动 */
+  min-width: max-content;
+  /* 确保纵向滚动条始终显示 */
+    overflow-y: scroll !important;
+    /* 添加最小高度确保即使内容很少也能显示滚动条 */
+    min-height: 300px;
 }
 
 .score-table {
@@ -793,6 +820,7 @@ export default {
   min-width: 800px;
 }
 
+/* 其他样式保持不变 */
 ::v-deep .el-table th {
   background-color: #f5f7fa;
   font-weight: 600;
@@ -817,9 +845,8 @@ export default {
   color: #52c41a;
 }
 
-/* 图片预览弹窗样式 - 固定在中央且不可滚动 */
 .fixed-center-dialog {
-  overflow: hidden !important; /* 禁止弹窗滚动 */
+  overflow: hidden !important;
 }
 
 ::v-deep .fixed-center-dialog .el-dialog {
@@ -836,7 +863,7 @@ export default {
 
 ::v-deep .fixed-center-dialog .el-dialog__body {
   padding: 0;
-  overflow: hidden !important; /* 禁止内容滚动 */
+  overflow: hidden !important;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -844,7 +871,7 @@ export default {
 
 .image-preview-container {
   width: 100%;
-  height: 80vh; /* 固定高度，不随内容变化 */
+  height: 80vh;
   min-height: 400px;
   max-height: 80vh;
   display: flex;
@@ -858,12 +885,11 @@ export default {
   align-items: center;
   justify-content: center;
   background-color: #f5f5f5;
-  cursor: zoom-in; /* 默认显示放大光标 */
+  cursor: zoom-in;
   position: relative;
-  overflow: hidden; /* 隐藏超出容器的内容 */
+  overflow: hidden;
 }
 
-/* 全屏状态下改变光标样式 */
 .image-wrapper:hover {
   cursor: zoom-out;
 }
@@ -875,7 +901,6 @@ export default {
   transition: all 0.3s ease;
 }
 
-/* 点击提示文字 */
 .click-to-fullscreen-hint,
 .exit-fullscreen-hint {
   position: absolute;
@@ -937,7 +962,6 @@ export default {
   color: #606266;
 }
 
-/* 全屏状态下的样式调整 */
 ::v-deep .el-dialog--fullscreen {
   padding: 0 !important;
 }
@@ -982,7 +1006,6 @@ export default {
   color: white;
 }
 
-/* 禁止页面在弹窗显示时滚动 */
 ::v-deep body.el-dialog-open {
   overflow: hidden;
 }
@@ -1023,7 +1046,7 @@ export default {
 }
 ::v-deep .report-dialog {
   .el-dialog__body {
-    max-height: 100vh - 30vh;
+    max-height: calc(100vh - 30vh);
     overflow-y: auto;
   }
 }
