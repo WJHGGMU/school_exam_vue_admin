@@ -205,7 +205,8 @@
       class="report-dialog"
       @close="closeReport"
     >
-      <vue-markdown :source="markdownContent" />
+      <!-- <vue-markdown :source="markdownContent" /> -->
+      <mavon-editor v-model="markdownContent" :toolbars-flag="false" :subfield="false" :default-open="'preview'" />
     </el-dialog>
   </div>
 </template>
@@ -215,7 +216,8 @@ import request from '@/utils/request'
 import { BASE_URL } from '@/utils/request'
 import Cookies from 'js-cookie'
 import { Empty, Table, TableColumn, Select, Option, Message, Dialog, Icon } from 'element-ui'
-import VueMarkdown from 'vue-markdown'
+import { mavonEditor } from 'mavon-editor'
+import 'mavon-editor/dist/css/index.css'
 
 // 辅助函数：为图片路径添加BASE_URL前缀
 const addBaseUrlToImage = (imagePath) => {
@@ -247,7 +249,7 @@ export default {
     ElOption: Option,
     ElDialog: Dialog,
     ElIcon: Icon,
-    VueMarkdown
+    mavonEditor
   },
   data() {
     return {
