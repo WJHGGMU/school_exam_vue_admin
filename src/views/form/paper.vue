@@ -39,22 +39,30 @@
           <!-- 简化的操作按钮 -->
           <div class="simple-operate-buttons">
             <el-button
-              type="primary"
-              icon="el-icon-view"
-              @click="handleViewDetails(paper)"
+              type="warning"
+              icon="el-icon-upload"
               size="mini"
-            >
-              查看详情
-            </el-button>
-            <el-button
-              type="danger"
-              icon="el-icon-delete"
-              @click="handleDelete(paper.id)"
-              size="mini"
-              class="btn-margin-left"
-            >
-              删除
-            </el-button>
+              @click="handleUpload(paper)"
+            >上传试卷</el-button>
+            <div>
+              <el-button
+                type="primary"
+                icon="el-icon-view"
+                size="mini"
+                @click="handleViewDetails(paper)"
+              >
+                查看详情
+              </el-button>
+              <el-button
+                type="danger"
+                icon="el-icon-delete"
+                size="mini"
+                class="btn-margin-left"
+                @click="handleDelete(paper.id)"
+              >
+                删除
+              </el-button>
+            </div>
           </div>
         </div>
       </el-card>
@@ -172,7 +180,7 @@
               size="mini"
               class="btn-margin-left"
               :disabled="!currentPaper.answers_parse_file"
-              >
+            >
               答题卡
             </el-button>
             <el-button
@@ -182,7 +190,7 @@
               size="mini"
               class="btn-margin-left"
               :disabled="!currentPaper.standard_answer_file"
-              >
+            >
               参考答案
             </el-button>
           </div>
@@ -461,11 +469,35 @@
         <el-button type="primary" @click="handleEditSubmit">确认修改</el-button>
       </div>
     </el-dialog>
+    <el-dialog
+      title="上传试卷"
+      :visible.sync="uploadDialogVisible"
+      class="paper-upload-dialog"
+    >
+      <el-upload
+        ref="uploadPaper"
+        class="upload-demo"
+        drag
+        :action="getBaseUrl() + '/sexam/student_answers/'"
+        :data="{
+          test_paper_id: click_paper_id
+        }"
+        :auto-upload="false"
+        :on-success="handleUploadSuccess"
+      >
+        <i class="el-icon-upload" />
+        <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+        <div slot="tip" class="el-upload__tip" style="margin-top: 10px;">只能上传pdf文件，且不超过50mb</div>
+      </el-upload>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" size="small" @click="submitUpload">上传</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import request from '@/utils/request'
+import request, { BASE_URL } from '@/utils/request'
 import Cookies from 'js-cookie'
 import ImageCanvas from '@/components/ImageCanvas.vue'
 
@@ -554,10 +586,12 @@ export default {
       isFullscreen: false,
       labelWidth: '120px',
       addUploadedFiles: {
-            topic: null,
-            answer: null,
-            standard: null
-          }
+        topic: null,
+        answer: null,
+        standard: null
+      },
+      uploadDialogVisible: false,
+      click_paper_id: 0
     }
   },
   async created() {
@@ -579,6 +613,9 @@ export default {
     window.removeEventListener('resize', this.handleResize)
   },
   methods: {
+    getBaseUrl() {
+      return BASE_URL
+    },
     cancelPositioningEdit() {
       // 检查是否有未保存的更改
       if (JSON.stringify(this.currentPositioningData) !== JSON.stringify(this.tempPositioningData)) {
@@ -1304,8 +1341,20 @@ export default {
         console.error('保存定位数据失败：', error);
         this.$message.error('保存定位数据失败，请稍后重试');
       }
+    },
+
+    handleUpload(paper) {
+      this.click_paper_id = paper.id
+      this.uploadDialogVisible = true
+    },
+    submitUpload() {
+      this.$refs.uploadPaper.submit()
+    },
+    handleUploadSuccess() {
+      this.$message.success('试卷上传成功')
+      this.uploadDialogVisible = false
     }
-  },
+  }
 }
 </script>
 
@@ -1369,7 +1418,10 @@ export default {
 /* 简化的操作按钮样式 */
 .simple-operate-buttons {
   display: flex;
+  width: 100%;
   margin-top: 12px;
+  flex-direction: row;
+  justify-content: space-between;
 }
 
 /* 详情弹窗样式 */
@@ -1862,5 +1914,18 @@ export default {
   .positioning-container {
     padding: 8px;
   }
+}
+</style>
+<style lang="scss">
+.paper-upload-dialog {
+  .el-dialog__body {
+    .upload-demo {
+      align-items: center;
+    }
+  }
+}
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
 }
 </style>
