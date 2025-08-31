@@ -1353,6 +1353,8 @@ export default {
     handleUploadSuccess() {
       this.$message.success('试卷上传成功')
       this.uploadDialogVisible = false
+      this.$refs.uploadPaper.clearFiles()
+      this.fetchTestPapers()
     }
   }
 }
