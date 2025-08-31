@@ -35,13 +35,14 @@
     <!-- 成绩表格 - 支持横向滚动 -->
     <div class="table-container">
       <el-table
+        v-loading="loading"
         :data="filteredScoreList"
         border
         stripe
         class="score-table"
-        v-loading="loading"
         element-loading-text="正在加载成绩数据..."
         :scroll-x="true"
+        :max-height="maxHeight"
       >
         <!-- 基础列 - 序号、班级、姓名 -->
         <el-table-column
@@ -206,7 +207,7 @@
       class="report-dialog"
       @close="reportVisible = false"
     >
-      <vue-markdown>{{ markdownContent }}</vue-markdown>
+      <mavon-editor v-model="markdownContent" :toolbars-flag="false" :subfield="false" :default-open="'preview'" />
     </el-dialog>
   </div>
 </template>
@@ -216,7 +217,8 @@ import request from '@/utils/request'
 import { BASE_URL } from '@/utils/request'
 import Cookies from 'js-cookie'
 import { Empty, Table, TableColumn, Select, Option, Message, Dialog, Icon } from 'element-ui'
-import VueMarkdown from 'vue-markdown'
+import { mavonEditor } from 'mavon-editor'
+import 'mavon-editor/dist/css/index.css'
 
 // 辅助函数：为图片路径添加BASE_URL前缀
 const addBaseUrlToImage = (imagePath) => {
@@ -248,7 +250,7 @@ export default {
     ElOption: Option,
     ElDialog: Dialog,
     ElIcon: Icon,
-    VueMarkdown
+    mavonEditor
   },
   data() {
     return {
@@ -289,13 +291,14 @@ export default {
       positionList: [],
       clickScore: {},
       markdownContent: '',
-      reportVisible: false
+      reportVisible: false,
+      maxHeight: 500
     }
   },
   created() {
     // 禁止页面整体滚动
-    document.documentElement.style.overflow = 'hidden'
-    document.body.style.overflow = 'hidden'
+    // document.documentElement.style.overflow = 'hidden'
+    // document.body.style.overflow = 'hidden'
 
     this.fetchExamDetail().then(() => {
       this.fetchClassOptions()
@@ -303,55 +306,63 @@ export default {
     })
 
     // 监听ESC键，退出全屏
-    document.addEventListener('keydown', this.handleKeyDown)
-    this.$nextTick(() => {
-      const table = this.$el.querySelector('.score-table')
-      const bodyWrapper = table?.querySelector('.el-table__body-wrapper')
-      const fixedBody = table?.querySelector('.el-table__fixed-body-wrapper')
+    // document.addEventListener('keydown', this.handleKeyDown)
+    // this.$nextTick(() => {
+    //   const table = this.$el.querySelector('.score-table')
+    //   const bodyWrapper = table?.querySelector('.el-table__body-wrapper')
+    //   const fixedBody = table?.querySelector('.el-table__fixed-body-wrapper')
 
-      if (!bodyWrapper || !fixedBody) return
+    //   if (!bodyWrapper || !fixedBody) return
 
-      const syncScroll = () => {
-        fixedBody.style.paddingTop = bodyWrapper.scrollTop + 'px'
-      }
+    //   const syncScroll = () => {
+    //     fixedBody.style.paddingTop = bodyWrapper.scrollTop + 'px'
+    //   }
 
-      bodyWrapper.addEventListener('scroll', syncScroll)
+    //   bodyWrapper.addEventListener('scroll', syncScroll)
 
-      this.$once('hook:beforeDestroy', () => {
-        bodyWrapper.removeEventListener('scroll', syncScroll)
-      })
-    })
+    //   this.$once('hook:beforeDestroy', () => {
+    //     bodyWrapper.removeEventListener('scroll', syncScroll)
+    //   })
+    // })
   },
   beforeDestroy() {
     // 移除事件监听
-    document.removeEventListener('keydown', this.handleKeyDown)
-    // 恢复页面滚动
-    document.documentElement.style.overflow = ''
-    document.body.style.overflow = ''
+    // document.removeEventListener('keydown', this.handleKeyDown)
+    // // 恢复页面滚动
+    // document.documentElement.style.overflow = ''
+    // document.body.style.overflow = ''
   },
   mounted() {
-    const observer = new MutationObserver(() => {
-      const table = this.$el.querySelector('.score-table')
-      const bodyWrapper = table?.querySelector('.el-table__body-wrapper')
-      const fixedBody = table?.querySelector('.el-table__fixed-body-wrapper')
+    this.getMaxHeight()
+    window.addEventListener('resize', this.getMaxHeight)
+    // const observer = new MutationObserver(() => {
+    //   const table = this.$el.querySelector('.score-table')
+    //   const bodyWrapper = table?.querySelector('.el-table__body-wrapper')
+    //   const fixedBody = table?.querySelector('.el-table__fixed-body-wrapper')
 
-      if (bodyWrapper && fixedBody) {
-        const syncScroll = () => {
-          fixedBody.style.paddingTop = bodyWrapper.scrollTop + 'px'
-        }
+    //   if (bodyWrapper && fixedBody) {
+    //     const syncScroll = () => {
+    //       fixedBody.style.paddingTop = bodyWrapper.scrollTop + 'px'
+    //     }
 
-        bodyWrapper.addEventListener('scroll', syncScroll)
-        observer.disconnect() // 找到后停止监听
+    //     bodyWrapper.addEventListener('scroll', syncScroll)
+    //     observer.disconnect() // 找到后停止监听
 
-        this.$once('hook:beforeDestroy', () => {
-          bodyWrapper.removeEventListener('scroll', syncScroll)
-        })
-      }
-    })
+    //     this.$once('hook:beforeDestroy', () => {
+    //       bodyWrapper.removeEventListener('scroll', syncScroll)
+    //     })
+    //   }
+    // })
 
-    observer.observe(this.$el, { childList: true, subtree: true })
+    // observer.observe(this.$el, { childList: true, subtree: true })
   },
   methods: {
+    getMaxHeight() {
+      this.$nextTick(() => {
+        const innerHeight = window.innerHeight
+        this.maxHeight = innerHeight - 160
+      })
+    },
     // 显示图片预览
     showImagePreview(images, row) {
       console.log('准备预览图片:', images, row)
@@ -775,7 +786,7 @@ export default {
   max-width: 1200px;
   margin: 0 auto;
   background-color: #fff;
-  min-height: 100vh;
+  // min-height: 100vh - 50px;
   position: relative; /* 确保弹窗定位相对于此容器 */
 }
 
@@ -800,38 +811,38 @@ export default {
 
 /* 表格容器样式 - 包含横向滚动条 */
 .table-container {
-  width: 100%;
-  overflow-x: auto; /* 横向滚动条显示在这里 */
-  overflow-y: auto; /* 纵向滚动条也显示在这里 */
-  margin-bottom: 20px;
-  max-height: 80vh; /* 计算合适的高度 */
+  // width: 100%;
+  // overflow-x: auto; /* 横向滚动条显示在这里 */
+  // overflow-y: auto; /* 纵向滚动条也显示在这里 */
+  // margin-bottom: 20px;
+  // max-height: 80vh; /* 计算合适的高度 */
   -webkit-overflow-scrolling: touch; /* 平滑滚动支持 */
 }
 
 /* 优化表格滚动体验 */
-.score-table {
-  width: 100%;
-  min-width: 1000px; /* 确保内容宽度足够触发容器滚动 */
-  table-layout: fixed; /* 固定表格布局，优化滚动性能 */
-}
+// .score-table {
+//   width: 100%;
+//   min-width: 1000px; /* 确保内容宽度足够触发容器滚动 */
+//   table-layout: fixed; /* 固定表格布局，优化滚动性能 */
+// }
 
 /* 确保表格头部和内容同步滚动 */
 // ::v-deep .el-table__header-wrapper,
-::v-deep .el-table__body-wrapper {
-  overflow-x: auto;
-}
+// ::v-deep .el-table__body-wrapper {
+//   overflow-x: auto;
+// }
 
-::v-deep .el-table th {
-  background-color: #f5f7fa;
-  font-weight: 600;
-  white-space: nowrap; /* 防止表头文字换行 */
-}
+// ::v-deep .el-table th {
+//   background-color: #f5f7fa;
+//   font-weight: 600;
+//   white-space: nowrap; /* 防止表头文字换行 */
+// }
 
 /* 优化固定列样式，确保滚动时显示正确 */
-::v-deep .el-table__fixed-left {
-  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
-  z-index: 2;
-}
+// ::v-deep .el-table__fixed-left {
+//   box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
+//   z-index: 2;
+// }
 
 .empty-state {
   text-align: center;
