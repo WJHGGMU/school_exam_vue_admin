@@ -131,15 +131,14 @@
     <!-- 图片预览弹窗-->
     <el-dialog
       ref="previewDialog"
-      top="3vh"
-      width="52%"
+      :top="rate <= 0.8 ? '4vh' : '9vh'"
+      :width="getDialogWidth"
       :visible.sync="previewVisible"
       :fullscreen="isFullscreen"
       :show-close="true"
-      @close="closePreview"
       :modal-append-to-body="false"
       :append-to-body="true"
-      class="fixed-center-dialog"
+      @close="closePreview"
     >
       <template slot="title">
         <div style="display: flex;justify-content: space-between">
@@ -153,6 +152,7 @@
           class="image-wrapper"
         >
           <el-image
+            ref="previewImage"
             :src="previewImageList[currentImageIndex]"
             :alt="`预览图片 ${currentImageIndex + 1}`"
             fit="contain"
@@ -163,18 +163,11 @@
           <div
             v-for="(item, index) in positionList"
             :key="index"
-            :class="item.class"
             :style="item.style"
+            class="score-area"
+            @click="handleScoreClick"
           >
             {{ item.text }}
-          </div>
-          <!-- 点击提示 -->
-          <div v-if="!isFullscreen" class="click-to-fullscreen-hint">
-            点击图片进入全屏查看
-          </div>
-          <!-- 退出全屏提示 -->
-          <div v-if="isFullscreen" class="exit-fullscreen-hint">
-            点击图片退出全屏 | 按ESC键退出
           </div>
         </div>
 
@@ -293,7 +286,13 @@ export default {
       markdownContent: '',
       reportVisible: false,
       maxHeight: 500,
-      clickSubjectCode: ''
+      clickSubjectCode: '',
+      rate: 0
+    }
+  },
+  computed: {
+    getDialogWidth() {
+      return 1188 * this.rate + 40 + 'px'
     }
   },
   created() {
@@ -334,6 +333,26 @@ export default {
     // document.body.style.overflow = ''
   },
   mounted() {
+    const innerHeight = window.innerHeight
+    console.log(innerHeight, 'innerHeight')
+    // if (innerHeight < 700) {
+    //   this.rate = 0.7
+    // } else if (innerHeight >= 700 && innerHeight < 800) {
+    //   this.rate = 0.75
+    // } else if (innerHeight >= 800 && innerHeight < 900) {
+    //   this.rate = 0.8
+    // } else if (innerHeight >= 900 && innerHeight < 1000) {
+    //   this.rate = 0.85
+    // } else if (innerHeight >= 1000 && innerHeight < 1188) {
+    //   this.rate = 0.9
+    // } else {
+    //   this.rate = 1
+    // }
+    if (innerHeight <= 869) {
+      this.rate = 0.8
+    } else {
+      this.rate = 1
+    }
     this.getMaxHeight()
     window.addEventListener('resize', this.getMaxHeight)
     // const observer = new MutationObserver(() => {
@@ -396,11 +415,11 @@ export default {
             text: item.rating_msg,
             style: {
               position: 'absolute',
-              top: item.y * 0.8 + 'px',
-              left: item.x * 0.8 + 'px',
+              top: item.y * this.rate + 'px',
+              left: item.x * this.rate + 'px',
               color: 'red',
-              width: item.width * 0.8 + 'px',
-              height: item.height * 0.8 + 'px'
+              width: item.width * this.rate + 'px',
+              height: item.height * this.rate + 'px'
             }
           }
         })
@@ -491,11 +510,11 @@ export default {
             text: item.rating_msg,
             style: {
               position: 'absolute',
-              top: item.y * 0.8 + 'px',
-              left: item.x * 0.8 + 'px',
+              top: item.y * this.rate + 'px',
+              left: item.x * this.rate + 'px',
               color: 'red',
-              width: item.width * 0.8 + 'px',
-              height: item.height * 0.8 + 'px'
+              width: item.width * this.rate + 'px',
+              height: item.height * this.rate + 'px'
             }
           }
         })
@@ -522,11 +541,11 @@ export default {
             text: item.rating_msg,
             style: {
               position: 'absolute',
-              top: item.y * 0.8 + 'px',
-              left: item.x * 0.8 + 'px',
+              top: item.y * this.rate + 'px',
+              left: item.x * this.rate + 'px',
               color: 'red',
-              width: item.width * 0.8 + 'px',
-              height: item.height * 0.8 + 'px'
+              width: item.width * this.rate + 'px',
+              height: item.height * this.rate + 'px'
             }
           }
         })
@@ -599,7 +618,7 @@ export default {
           }
         }
         return null
-      };
+      }
 
       const targetSubtree = findTargetSubtree(processedData, targetOrgId)
       if (!targetSubtree) return []
@@ -766,6 +785,17 @@ export default {
     closeReport() {
       this.reportVisible = false
       this.markdownContent = ''
+    },
+    // 点击成绩值时触发，模拟点击图片以打开图片预览
+    handleScoreClick() {
+      const imageElement = this.$refs.previewImage.$el.querySelector('img')
+      if (imageElement) {
+        const clickEvent = new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true
+        })
+        imageElement.dispatchEvent(clickEvent)
+      }
     }
   },
   watch: {
@@ -831,7 +861,6 @@ export default {
   // max-height: 80vh; /* 计算合适的高度 */
   -webkit-overflow-scrolling: touch; /* 平滑滚动支持 */
 }
-
 /* 优化表格滚动体验 */
 // .score-table {
 //   width: 100%;
@@ -876,54 +905,23 @@ export default {
   color: #52c41a;
 }
 
-/* 图片预览弹窗样式 - 固定在中央且不可滚动 */
-.fixed-center-dialog {
-  overflow: hidden !important; /* 禁止弹窗滚动 */
-}
-
-::v-deep .fixed-center-dialog .el-dialog {
-  position: fixed !important;
-  top: 40% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  margin: 0 !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
-  display: flex;
-  flex-direction: column;
-}
-
-::v-deep .fixed-center-dialog .el-dialog__body {
-  padding: 0;
-  overflow: hidden !important; /* 禁止内容滚动 */
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
 .image-preview-container {
   width: 100%;
-  height: 80vh; /* 固定高度，不随内容变化 */
+  height: auto; /* 固定高度，不随内容变化 */
   min-height: 400px;
   display: flex;
   flex-direction: column;
 }
 
 .image-wrapper {
-  width: 950px;
-  height: 674px;
+  width: 100%;
+  height: auto;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: #f5f5f5;
-  cursor: zoom-in; /* 默认显示放大光标 */
   position: relative;
   overflow: hidden; /* 隐藏超出容器的内容 */
-}
-
-/* 全屏状态下改变光标样式 */
-.image-wrapper:hover {
-  cursor: zoom-out;
 }
 
 .preview-image {
@@ -1084,6 +1082,10 @@ export default {
     max-height: calc(100vh - 30vh);
     overflow-y: auto;
   }
+}
+
+.score-area {
+  cursor: pointer;
 }
 
 // // /* 针对 Element UI 表格的滚动容器进行翻转 */
