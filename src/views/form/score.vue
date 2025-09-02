@@ -348,8 +348,12 @@ export default {
     // } else {
     //   this.rate = 1
     // }
-    if (innerHeight <= 869) {
+    if (innerHeight <= 798) {
+      this.rate = 0.7
+    } else if (innerHeight > 798 && innerHeight <= 869) {
       this.rate = 0.8
+    } else if (innerHeight > 869 && innerHeight <= 940) {
+      this.rate = 0.9
     } else {
       this.rate = 1
     }
