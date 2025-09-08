@@ -440,21 +440,20 @@ export default {
       }
       try {
         const token = Cookies.get('access')
-        console.log('yyy', this.addExamForm.organizationId);
-        // await request({
-        //  url: '/sexam/exams/',
-        //  method: 'post',
-        //  headers: { Authorization: `Bearer ${token}` },
-        //  data: {
-        //    organization: this.addExamForm.organizationId,
-        //    exam_type: this.addExamForm.examType,
-        //    name: this.addExamForm.name,
-        //    description: this.addExamForm.description
-        //   }
-        // })
-        // this.$message.success('新建成功')
-        // this.addExamDialogVisible = false
-        // this.fetchExamList()
+        await request({
+         url: '/sexam/exams/',
+         method: 'post',
+         headers: { Authorization: `Bearer ${token}` },
+         data: {
+           organization: this.addExamForm.organizationId,
+           exam_type: this.addExamForm.examType,
+           name: this.addExamForm.name,
+           description: this.addExamForm.description
+          }
+        })
+        this.$message.success('新建成功')
+        this.addExamDialogVisible = false
+        this.fetchExamList()
       } catch (e) {
         console.error(e)
         this.$message.error('新建失败')
