@@ -46,7 +46,7 @@
       >
         <el-form-item label="所属组织" required>
           <el-cascader
-            v-model="editExamForm.organizationId"
+            v-model="addExamForm.organizationId"
             :options="filteredOrgData"
             :props="cascaderProps"
             clearable
@@ -440,20 +440,21 @@ export default {
       }
       try {
         const token = Cookies.get('access')
-        await request({
-         url: '/sexam/exams/',
-         method: 'post',
-         headers: { Authorization: `Bearer ${token}` },
-         data: {
-           organization: this.addExamForm.organizationId,
-           exam_type: this.addExamForm.examType,
-           name: this.addExamForm.name,
-           description: this.addExamForm.description
-          }
-        })
-        this.$message.success('新建成功')
-        this.addExamDialogVisible = false
-        this.fetchExamList()
+        console.log('yyy', this.addExamForm.organizationId);
+        // await request({
+        //  url: '/sexam/exams/',
+        //  method: 'post',
+        //  headers: { Authorization: `Bearer ${token}` },
+        //  data: {
+        //    organization: this.addExamForm.organizationId,
+        //    exam_type: this.addExamForm.examType,
+        //    name: this.addExamForm.name,
+        //    description: this.addExamForm.description
+        //   }
+        // })
+        // this.$message.success('新建成功')
+        // this.addExamDialogVisible = false
+        // this.fetchExamList()
       } catch (e) {
         console.error(e)
         this.$message.error('新建失败')
