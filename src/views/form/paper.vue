@@ -35,6 +35,7 @@
           <p><strong>科目：</strong>{{ getSubjectName(paper.subject) }}</p>
           <p><strong>创建时间：</strong>{{ paper.created_at }}</p>
           <p><strong>更新时间：</strong>{{ paper.updated_at }}</p>
+          <p><strong>题目总数：</strong>{{ paper.questions_count || 0 }}</p>
 
           <!-- 简化的操作按钮 -->
           <div class="simple-operate-buttons">
@@ -82,6 +83,7 @@
           <p><strong>科目：</strong>{{ getSubjectName(currentPaper.subject) }}</p>
           <p><strong>创建时间：</strong>{{ currentPaper.created_at }}</p>
           <p><strong>更新时间：</strong>{{ currentPaper.updated_at }}</p>
+          <p><strong>题目总数：</strong>{{ currentPaper.questions_count || 0 }}</p>
         </div>
 
         <div class="image-section">
@@ -249,34 +251,93 @@
        </div>
      </div>
 
-     <!-- 外层滚动容器 -->
-     <div class="original-size-container" ref="scrollBox">
-       <!-- 图片包装器，用于精确计算尺寸 -->
-       <div class="image-wrapper" ref="imageWrapper">
-         <!-- 1. 原始尺寸图片（仅做底图展示） -->
-         <el-image
-           ref="oriImg"
-           :src="currentPositioningImage"
-           fit="none"
-           class="original-image"
-           @load="onImgLoaded"
-         >
-           <div slot="error" class="image-placeholder">
-             <i class="el-icon-picture-outline"></i>
-           </div>
-         </el-image>
+     <!-- 主要内容区域 - 分为左右两栏 -->
+     <div class="positioning-content">
+       <!-- 左侧：图片和编辑框 -->
+       <div class="positioning-image-container">
+         <!-- 外层滚动容器 -->
+         <div class="original-size-container" ref="scrollBox">
+           <!-- 图片包装器，用于精确计算尺寸 -->
+           <div class="image-wrapper" ref="imageWrapper">
+             <!-- 1. 原始尺寸图片（仅做底图展示） -->
+             <el-image
+               ref="oriImg"
+               :src="currentPositioningImage"
+               fit="none"
+               class="original-image"
+               @load="onImgLoaded"
+             >
+               <div slot="error" class="image-placeholder">
+                 <i class="el-icon-picture-outline"></i>
+               </div>
+             </el-image>
 
-         <!-- 2. 与之同尺寸的可交互画布 -->
-         <ImageCanvas
-           :key="currentPositioningImage"
-           :src="currentPositioningImage"
-           v-model="currentPositioningData"
-           :natural="true"
-           class="canvas-overlay"
-           ref="imageCanvas"
-           @box-selected="onBoxSelected"
-           @box-deselected="onBoxDeselected"
-         />
+             <!-- 2. 与之同尺寸的可交互画布 -->
+             <ImageCanvas
+               :key="currentPositioningImage"
+               :src="currentPositioningImage"
+               v-model="currentPositioningData"
+               :natural="true"
+               class="canvas-overlay"
+               ref="imageCanvas"
+               @box-selected="onBoxSelected"
+               @box-deselected="onBoxDeselected"
+             />
+           </div>
+         </div>
+       </div>
+
+       <!-- 右侧：题目选择面板 -->
+       <div class="question-selection-panel" v-if="selectedBoxIndex !== -1">
+         <div class="panel-header">
+           <h3>编辑框 #{{ selectedBoxIndex + 1 }} - 题目选择</h3>
+           <p>共 {{ currentPaper.questions_count || 0 }} 道题，可点选关联题目</p>
+         </div>
+
+         <div class="question-selection-controls">
+           <el-button
+             type="primary"
+             size="mini"
+             @click="selectAllQuestions"
+             :disabled="!currentPaper.questions_count"
+           >
+             全选
+           </el-button>
+           <el-button
+             type="warning"
+             size="mini"
+             class="btn-margin-left"
+             @click="deselectAllQuestions"
+             :disabled="!currentPaper.questions_count"
+           >
+             取消全选
+           </el-button>
+           <el-button
+             type="info"
+             size="mini"
+             class="btn-margin-left"
+             @click="invertQuestionSelection"
+             :disabled="!currentPaper.questions_count"
+           >
+             反选
+           </el-button>
+         </div>
+
+         <div class="question-grid">
+           <div
+             v-for="i in currentPaper.questions_count"
+             :key="i"
+             class="question-item"
+             :class="{ 'selected': isQuestionSelected(i) }"
+             @click="toggleQuestionSelection(i)"
+           >
+             {{ i }}
+           </div>
+         </div>
+
+         <div class="selected-count">
+           已选择: {{ selectedQuestions.length }} 道题
+         </div>
        </div>
      </div>
 
@@ -312,6 +373,14 @@
               :value="value"
             ></el-option>
           </el-select>
+        </el-form-item>
+        <el-form-item label="题目总数" required>
+          <el-input
+            v-model.number="addForm.questions_count"
+            placeholder="请输入题目总数"
+            type="number"
+            min="1"
+          ></el-input>
         </el-form-item>
         <el-form-item label="试卷">
           <el-upload
@@ -403,6 +472,14 @@
             ></el-option>
           </el-select>
         </el-form-item>
+        <el-form-item label="题目总数">
+          <el-input
+            v-model.number="editForm.questions_count"
+            placeholder="请输入题目总数"
+            type="number"
+            min="1"
+          ></el-input>
+        </el-form-item>
         <el-form-item label="试卷">
           <el-upload
             class="upload-demo"
@@ -484,7 +561,6 @@
         }"
         :auto-upload="false"
         :on-success="handleUploadSuccess"
-        multiple
       >
         <i class="el-icon-upload" />
         <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
@@ -534,6 +610,7 @@ export default {
         name: '',
         subject: '',
         exam: '',
+        questions_count: 0,
         topic_paper_file: '',
         answers_parse_file: '',
         standard_answer_file: '',
@@ -563,7 +640,8 @@ export default {
       addForm: {
         name: '',
         subject: '',
-        exam: ''
+        exam: '',
+        questions_count: 0
       },
       addTopicPaperFileList: [],
       addAnswerCardFileList: [],
@@ -593,6 +671,15 @@ export default {
       },
       uploadDialogVisible: false,
       click_paper_id: 0
+    }
+  },
+  computed: {
+    // 获取当前选中编辑框的题目列表
+    selectedQuestions() {
+      if (this.selectedBoxIndex === -1 || !this.currentPositioningData[this.selectedBoxIndex]) {
+        return [];
+      }
+      return this.currentPositioningData[this.selectedBoxIndex].questions_list || [];
     }
   },
   async created() {
@@ -758,6 +845,13 @@ export default {
       if (!paper.positioning1_enabled) paper.positioning1_enabled = false;
       if (!paper.positioning2) paper.positioning2 = [];
       if (!paper.positioning2_enabled) paper.positioning2_enabled = false;
+      // 确保题目列表存在
+      paper.positioning1.forEach(box => {
+        if (!box.questions_list) box.questions_list = [];
+      });
+      paper.positioning2.forEach(box => {
+        if (!box.questions_list) box.questions_list = [];
+      });
 
       this.currentPaper = { ...paper };
       this.detailDialogVisible = true;
@@ -782,6 +876,7 @@ export default {
         name: paper.name,
         subject: paper.subject,
         exam: this.$route.params.id,
+        questions_count: paper.questions_count || 0,
         topic_paper_file: paper.topic_paper_file,
         answers_parse_file: paper.answers_parse_file,
         standard_answer_file: paper.standard_answer_file,
@@ -1074,6 +1169,11 @@ export default {
         return;
       }
 
+      if (!this.editForm.questions_count || this.editForm.questions_count < 1) {
+        this.$message.error('请输入有效的题目总数');
+        return;
+      }
+
       try {
         const token = Cookies.get('access');
         const formData = new FormData();
@@ -1081,6 +1181,7 @@ export default {
         formData.append('name', this.editForm.name);
         formData.append('subject', this.editForm.subject);
         formData.append('exam', this.$route.params.id);
+        formData.append('questions_count', this.editForm.questions_count);
 
         await request({
           url: `/sexam/testpapers/${this.editForm.id}/`,
@@ -1118,7 +1219,8 @@ export default {
       this.addForm = {
         name: '',
         subject: '',
-        exam: this.$route.params.id
+        exam: this.$route.params.id,
+        questions_count: 0
       }
       this.addTopicPaperFileList = []
       this.addAnswerCardFileList = []
@@ -1140,7 +1242,7 @@ export default {
     },
     // 提交新建试卷
     async handleAddSubmit() {
-      // 验证必填项（仅试卷名称和学科类型）
+      // 验证必填项
       if (!this.addForm.name) {
         this.$message.error('请输入试卷名称')
         return
@@ -1151,6 +1253,11 @@ export default {
         return
       }
 
+      if (!this.addForm.questions_count || this.addForm.questions_count < 1) {
+        this.$message.error('请输入有效的题目总数')
+        return
+      }
+
 
     try {
         const token = Cookies.get('access')
@@ -1158,6 +1265,7 @@ export default {
         formData.append('name', this.addForm.name)
         formData.append('subject', this.addForm.subject)
         formData.append('exam', this.$route.params.id)
+        formData.append('questions_count', this.addForm.questions_count)
 
         // 初始化定位数据
         formData.append('positioning1', JSON.stringify([]))
@@ -1206,6 +1314,12 @@ export default {
 
       // 保存当前定位数据的副本，用于编辑
       this.currentPositioningData = JSON.parse(JSON.stringify(this.currentPaper[type] || []));
+      // 确保每个编辑框都有questions_list属性
+      this.currentPositioningData.forEach(box => {
+        if (!box.questions_list) {
+          box.questions_list = [];
+        }
+      });
       this.tempPositioningData = JSON.parse(JSON.stringify(this.currentPositioningData));
       this.selectedBoxIndex = -1; // 重置选中状态
 
@@ -1250,7 +1364,8 @@ export default {
         y: Math.max(0, (imgHeight - defaultHeight) / 2),
         width: defaultWidth,
         height: defaultHeight,
-        // 可以添加其他默认属性，如名称、类型等
+        // 初始化空的题目列表
+        questions_list: [],
         name: `框${this.currentPositioningData.length + 1}`
       };
 
@@ -1326,6 +1441,7 @@ export default {
         formData.append('name', this.currentPaper.name);
         formData.append('subject', this.currentPaper.subject);
         formData.append('exam', this.$route.params.id);
+        formData.append('questions_count', this.currentPaper.questions_count || 0);
 
         await request({
           url: `/sexam/testpapers/${this.currentPaper.id}/`,
@@ -1342,6 +1458,66 @@ export default {
         console.error('保存定位数据失败：', error);
         this.$message.error('保存定位数据失败，请稍后重试');
       }
+    },
+
+    // 题目选择相关方法
+    isQuestionSelected(questionNumber) {
+      return this.selectedQuestions.includes(questionNumber);
+    },
+
+    toggleQuestionSelection(questionNumber) {
+      if (!this.currentPositioningData[this.selectedBoxIndex]) return;
+
+      // 确保questions_list存在
+      if (!this.currentPositioningData[this.selectedBoxIndex].questions_list) {
+        this.currentPositioningData[this.selectedBoxIndex].questions_list = [];
+      }
+
+      const index = this.currentPositioningData[this.selectedBoxIndex].questions_list.indexOf(questionNumber);
+
+      if (index === -1) {
+        // 添加题目
+        this.currentPositioningData[this.selectedBoxIndex].questions_list.push(questionNumber);
+        // 保持数组有序
+        this.currentPositioningData[this.selectedBoxIndex].questions_list.sort((a, b) => a - b);
+      } else {
+        // 移除题目
+        this.currentPositioningData[this.selectedBoxIndex].questions_list.splice(index, 1);
+      }
+    },
+
+    selectAllQuestions() {
+      if (!this.currentPositioningData[this.selectedBoxIndex] || !this.currentPaper.questions_count) return;
+
+      // 选择所有题目
+      this.currentPositioningData[this.selectedBoxIndex].questions_list = Array.from(
+        { length: this.currentPaper.questions_count },
+        (_, i) => i + 1
+      );
+    },
+
+    deselectAllQuestions() {
+      if (!this.currentPositioningData[this.selectedBoxIndex]) return;
+
+      // 取消选择所有题目
+      this.currentPositioningData[this.selectedBoxIndex].questions_list = [];
+    },
+
+    invertQuestionSelection() {
+      if (!this.currentPositioningData[this.selectedBoxIndex] || !this.currentPaper.questions_count) return;
+
+      // 获取当前已选择的题目
+      const currentSelected = new Set(this.currentPositioningData[this.selectedBoxIndex].questions_list);
+      // 计算反选后的题目列表
+      const invertedSelection = [];
+
+      for (let i = 1; i <= this.currentPaper.questions_count; i++) {
+        if (!currentSelected.has(i)) {
+          invertedSelection.push(i);
+        }
+      }
+
+      this.currentPositioningData[this.selectedBoxIndex].questions_list = invertedSelection;
     },
 
     handleUpload(paper) {
@@ -1527,11 +1703,98 @@ export default {
   white-space: nowrap;
 }
 
+/* 定位内容区域 - 分为左右两栏 */
+.positioning-content {
+  display: flex;
+  width: 100%;
+  height: calc(90vh - 180px);
+  overflow: hidden;
+}
+
+/* 左侧图片区域 */
+.positioning-image-container {
+  flex: 1;
+  overflow: hidden;
+  border-right: 1px solid #e4e7ed;
+}
+
+/* 右侧题目选择面板 */
+.question-selection-panel {
+  width: 360px;
+  padding: 16px;
+  overflow-y: auto;
+  background-color: #fff;
+  box-sizing: border-box;
+}
+
+.panel-header {
+  margin-bottom: 16px;
+}
+
+.panel-header h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #303133;
+}
+
+.panel-header p {
+  margin: 0;
+  font-size: 13px;
+  color: #606266;
+}
+
+.question-selection-controls {
+  margin-bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/* 题目网格 */
+.question-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.question-item {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: 1px solid #dcdfe6;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.question-item:hover {
+  background-color: #f5f7fa;
+  border-color: #c0c4cc;
+}
+
+.question-item.selected {
+  background-color: #409eff;
+  color: #fff;
+  border-color: #409eff;
+}
+
+.selected-count {
+  font-size: 13px;
+  color: #606266;
+  text-align: right;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
 .original-size-container {
   position: relative;
   display: block;
   overflow: auto;
-  max-height: 70vh;
+  max-height: 100%;
   padding: 0;
   margin: 0 auto;
   background-color: #f9f9f9;
@@ -1795,6 +2058,26 @@ export default {
     display: none; /* 在小屏幕上隐藏信息，节省空间 */
   }
 
+  /* 响应式调整定位内容区域 */
+  .positioning-content {
+    flex-direction: column;
+    height: auto;
+    max-height: calc(90vh - 180px);
+  }
+
+  .positioning-image-container {
+    flex: none;
+    height: 50%;
+    border-right: none;
+    border-bottom: 1px solid #e4e7ed;
+  }
+
+  .question-selection-panel {
+    width: 100%;
+    flex: none;
+    height: 50%;
+  }
+
   ::v-deep .fixed-dialog {
     top: 20px !important;
     bottom: 20px !important;
@@ -1882,7 +2165,7 @@ export default {
 /* 修复滚动问题的核心样式 */
 .original-size-container {
   overflow: auto;
-  max-height: 70vh;
+  max-height: 100%;
   background: #f9f9f9;
 }
 
@@ -1910,7 +2193,7 @@ export default {
 /* 响应式调整 */
 @media screen and (max-width: 768px) {
   .original-size-container {
-    max-height: calc(70vh - 80px);
+    max-height: 100%;
     padding: 0;
   }
 
