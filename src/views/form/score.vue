@@ -79,6 +79,8 @@
             <el-table-column
               align="center"
               min-width="100"
+              sortable
+              :sort-method="(a, b) => sortByScore(a, b, subjectCode)"
             >
               <template slot="header">成绩</template>
               <template slot-scope="scope">
@@ -769,10 +771,9 @@ export default {
       this.filteredScoreList = result
     },
     async handleReport() {
-      console.log(this.clickScore)
       const token = Cookies.get('access')
       const params = {
-        grade_id: this.clickScore.subjects.math.id
+        grade_id: this.clickScore.subjects[this.clickSubjectCode].id
       }
       await request({
         url: '/sexam/student_answers_details/',
@@ -800,6 +801,9 @@ export default {
         })
         imageElement.dispatchEvent(clickEvent)
       }
+    },
+    sortByScore(a, b, subjectCode) {
+      return b.subjects[subjectCode].score - a.subjects[subjectCode].score
     }
   },
   watch: {
