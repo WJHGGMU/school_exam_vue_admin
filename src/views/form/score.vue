@@ -668,7 +668,7 @@ export default {
           params
         })
 
-        this.scoreData = res.students_grades_dict || {}
+        this.scoreData = res || {}
         this.applyFilter()
       } catch (e) {
         console.error('获取成绩数据失败：', e)
@@ -681,7 +681,7 @@ export default {
     },
 
     applyFilter() {
-      if (Object.keys(this.scoreData).length === 0) {
+      if (this.scoreData.length === 0) {
         this.filteredScoreList = []
         this.displayedSubjects = {}
         return
@@ -698,10 +698,9 @@ export default {
         subjectsSet.add(subject)
       } else {
         // 总分情况下，显示所有学科
-        Object.keys(this.scoreData).forEach(studentName => {
-          const studentSubjects = this.scoreData[studentName]
+        this.scoreData.forEach(item => {
           // 排除组织信息，只处理学科数据
-          Object.keys(studentSubjects).forEach(subj => {
+          Object.keys(item).forEach(subj => {
             if (!['organization_id', 'organization_name'].includes(subj)) {
               subjectsSet.add(subj)
             }
@@ -715,6 +714,7 @@ export default {
       if (subjectsSet.has('total')) {
         this.displayedSubjects.total = this.SUBJECT_TYPES.total
         subjectsSet.delete('total')
+        subjectsSet.delete('student_name')
       }
       // 再添加其他学科
       Array.from(subjectsSet).forEach(subj => {
@@ -722,10 +722,10 @@ export default {
       })
 
       // 处理学生数据
-      Object.keys(this.scoreData).forEach(studentName => {
-        const studentInfo = this.scoreData[studentName]
+      this.scoreData.forEach(item => {
+        const studentInfo = item
         const studentData = {
-          studentName,
+          studentName: studentInfo.student_name,
           className: studentInfo.organization_name || '',
           subjects: {}
         }
