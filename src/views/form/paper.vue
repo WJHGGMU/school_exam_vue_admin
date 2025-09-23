@@ -1585,7 +1585,6 @@ export default {
   font-weight: bold;
   padding: 16px;
   padding-bottom: 0;
-  border-bottom: 1px solid #f0f0f0;
 }
 
 .card-body {
