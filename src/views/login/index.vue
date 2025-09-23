@@ -116,7 +116,7 @@ export default {
 
             Cookies.set('access', response.access)
             Cookies.set('refresh', response.refresh)
-            this.$router.push('/dashboard')
+            this.$router.push('/exam')
           } catch (error) {
             console.error('登录失败:', error)
             this.$message.error('登录失败，请检查用户名和密码')
