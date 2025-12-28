@@ -14,9 +14,9 @@
           :key="value"
           :label="label"
           :value="value"
-        ></el-option>
+        />
       </el-select>
-      <el-button type="primary" icon="el-icon-plus" @click="handleAddPaper" class="add-button">
+      <el-button type="primary" icon="el-icon-plus" class="add-button" @click="handleAddPaper">
         新建试卷
       </el-button>
     </div>
@@ -76,6 +76,7 @@
       :width="dialogWidth"
       :fullscreen="isFullscreen"
       custom-class="fixed-dialog"
+      :close-on-click-modal="false"
     >
       <div class="detail-content">
         <div class="detail-info">
@@ -97,8 +98,8 @@
                   <el-button
                     type="primary"
                     icon="el-icon-edit"
-                    @click="openPositioningDialog('positioning1')"
                     size="mini"
+                    @click="openPositioningDialog('positioning1')"
                   >
                     编辑定位
                   </el-button>
@@ -109,19 +110,19 @@
               </div>
 
               <el-image
+                ref="detailImage1"
                 :src="currentPaper.answers_parse_image_file1"
                 fit="contain"
                 :preview-src-list="[currentPaper.answers_parse_image_file1]"
                 class="base-image"
-                ref="detailImage1"
               >
                 <div slot="error" class="image-placeholder">
-                  <i class="el-icon-picture-outline"></i>
+                  <i class="el-icon-picture-outline" />
                 </div>
               </el-image>
             </div>
             <div v-else class="image-placeholder">
-              <i class="el-icon-picture-outline"></i>
+              <i class="el-icon-picture-outline" />
               <p>未上传图片1</p>
             </div>
 
@@ -133,8 +134,8 @@
                   <el-button
                     type="primary"
                     icon="el-icon-edit"
-                    @click="openPositioningDialog('positioning2')"
                     size="mini"
+                    @click="openPositioningDialog('positioning2')"
                   >
                     编辑定位
                   </el-button>
@@ -145,19 +146,19 @@
               </div>
 
               <el-image
+                ref="detailImage2"
                 :src="currentPaper.answers_parse_image_file2"
                 fit="contain"
                 :preview-src-list="[currentPaper.answers_parse_image_file2]"
                 class="base-image"
-                ref="detailImage2"
               >
                 <div slot="error" class="image-placeholder">
-                  <i class="el-icon-picture-outline"></i>
+                  <i class="el-icon-picture-outline" />
                 </div>
               </el-image>
             </div>
             <div v-else class="image-placeholder">
-              <i class="el-icon-picture-outline"></i>
+              <i class="el-icon-picture-outline" />
               <p>未上传图片2</p>
             </div>
           </div>
@@ -169,29 +170,29 @@
             <el-button
               type="primary"
               icon="el-icon-download"
-              @click="downloadFile(currentPaper.topic_paper_file, `${currentPaper.name}-试卷`)"
               size="mini"
               :disabled="!currentPaper.topic_paper_file"
+              @click="downloadFile(currentPaper.topic_paper_file, `${currentPaper.name}-试卷`)"
             >
               试卷
             </el-button>
             <el-button
               type="success"
               icon="el-icon-download"
-              @click="downloadFile(currentPaper.answers_parse_file, `${currentPaper.name}-答题卡`)"
               size="mini"
               class="btn-margin-left"
               :disabled="!currentPaper.answers_parse_file"
+              @click="downloadFile(currentPaper.answers_parse_file, `${currentPaper.name}-答题卡`)"
             >
               答题卡
             </el-button>
             <el-button
               type="warning"
               icon="el-icon-download"
-              @click="downloadFile(currentPaper.standard_answer_file, `${currentPaper.name}-参考答案`)"
               size="mini"
               class="btn-margin-left"
               :disabled="!currentPaper.standard_answer_file"
+              @click="downloadFile(currentPaper.standard_answer_file, `${currentPaper.name}-参考答案`)"
             >
               参考答案
             </el-button>
@@ -204,148 +205,157 @@
       </div>
     </el-dialog>
 
-   <!-- 定位编辑弹窗 - 添加了编辑框操作功能 -->
-   <el-dialog
-     :title="`编辑${editingPositioningType === 'positioning1' ? '首页' : '尾页'}定位`"
-     :visible.sync="positioningDialogVisible"
-     width="90%"
-     custom-class="positioning-dialog"
-     :before-close="cancelPositioningEdit"
-     :body-style="{padding: 0}"
-   >
-     <!-- 编辑工具栏 -->
-     <div class="positioning-toolbar">
-       <div class="toolbar-left">
-         <el-button
-           type="primary"
-           icon="el-icon-plus"
-           size="mini"
-           @click="addNewBox"
-         >
-           新增编辑框
-         </el-button>
-         <el-button
-           type="danger"
-           icon="el-icon-delete"
-           size="mini"
-           class="btn-margin-left"
-           @click="deleteSelectedBox"
-           :disabled="selectedBoxIndex === -1"
-         >
-           删除选中
-         </el-button>
-         <span class="selected-info" v-if="currentPositioningData.length > 0">
+    <!-- 定位编辑弹窗 - 添加了编辑框操作功能 -->
+    <el-dialog
+      :title="`编辑${editingPositioningType === 'positioning1' ? '首页' : '尾页'}定位`"
+      :visible.sync="positioningDialogVisible"
+      width="90%"
+      top="5vh"
+      custom-class="positioning-dialog"
+      :before-close="cancelPositioningEdit"
+      :body-style="{padding: 0}"
+      :close-on-click-modal="false"
+    >
+      <!-- 编辑工具栏 -->
+      <div class="positioning-toolbar">
+        <div class="toolbar-left">
+          <el-button
+            type="primary"
+            icon="el-icon-plus"
+            size="mini"
+            @click="addNewBox"
+          >
+            新增编辑框
+          </el-button>
+          <el-button
+            type="danger"
+            icon="el-icon-delete"
+            size="mini"
+            class="btn-margin-left"
+            :disabled="selectedBoxIndex === -1"
+            @click="deleteSelectedBox"
+          >
+            删除选中
+          </el-button>
+          <span v-if="currentPositioningData.length > 0" class="selected-info">
             (双击切换选中状态) 共 {{ currentPositioningData.length }} 个编辑框
-           <template v-if="selectedBoxIndex !== -1">，当前选中 #{{ selectedBoxIndex + 1 }}</template>
-         </span>
-       </div>
-       <div class="toolbar-right">
-         <el-button
-           type="info"
-           icon="el-icon-refresh"
-           size="mini"
-           @click="resetPositioning"
-         >
-           重置
-         </el-button>
-       </div>
-     </div>
+            <template v-if="selectedBoxIndex !== -1">，当前选中 #{{ selectedBoxIndex + 1 }}</template>
+          </span>
+        </div>
+        <div class="toolbar-right">
+          <el-button
+            type="info"
+            icon="el-icon-refresh"
+            size="mini"
+            @click="resetPositioning"
+          >
+            重置
+          </el-button>
+        </div>
+      </div>
 
-     <!-- 主要内容区域 - 分为左右两栏 -->
-     <div class="positioning-content">
-       <!-- 左侧：图片和编辑框 -->
-       <div class="positioning-image-container">
-         <!-- 外层滚动容器 -->
-         <div class="original-size-container" ref="scrollBox">
-           <!-- 图片包装器，用于精确计算尺寸 -->
-           <div class="image-wrapper" ref="imageWrapper">
-             <!-- 1. 原始尺寸图片（仅做底图展示） -->
-             <el-image
-               ref="oriImg"
-               :src="currentPositioningImage"
-               fit="none"
-               class="original-image"
-               @load="onImgLoaded"
-             >
-               <div slot="error" class="image-placeholder">
-                 <i class="el-icon-picture-outline"></i>
-               </div>
-             </el-image>
+      <!-- 主要内容区域 - 分为左右两栏 -->
+      <div class="positioning-content">
+        <!-- 左侧：图片和编辑框 -->
+        <div class="positioning-image-container">
+          <!-- 外层滚动容器 -->
+          <div ref="scrollBox" class="original-size-container">
+            <!-- 图片包装器，用于精确计算尺寸 -->
+            <div ref="imageWrapper" class="image-wrapper">
+              <!-- 1. 原始尺寸图片（仅做底图展示） -->
+              <el-image
+                ref="oriImg"
+                :src="currentPositioningImage"
+                fit="none"
+                class="original-image"
+                @load="onImgLoaded"
+              >
+                <div slot="error" class="image-placeholder">
+                  <i class="el-icon-picture-outline" />
+                </div>
+              </el-image>
 
-             <!-- 2. 与之同尺寸的可交互画布 -->
-             <ImageCanvas
-               :key="currentPositioningImage"
-               :src="currentPositioningImage"
-               v-model="currentPositioningData"
-               :natural="true"
-               class="canvas-overlay"
-               ref="imageCanvas"
-               @box-selected="onBoxSelected"
-               @box-deselected="onBoxDeselected"
-             />
-           </div>
-         </div>
-       </div>
+              <!-- 2. 与之同尺寸的可交互画布 -->
+              <ImageCanvas
+                :key="currentPositioningImage"
+                ref="imageCanvas"
+                v-model="currentPositioningData"
+                :src="currentPositioningImage"
+                :natural="true"
+                class="canvas-overlay"
+                @box-selected="onBoxSelected"
+                @box-deselected="onBoxDeselected"
+              />
+            </div>
+          </div>
+        </div>
 
-       <!-- 右侧：题目选择面板 -->
-       <div class="question-selection-panel" v-if="selectedBoxIndex !== -1">
-         <div class="panel-header">
-           <h3>编辑框 #{{ selectedBoxIndex + 1 }} - 题目选择</h3>
-           <p>共 {{ currentPaper.questions_count || 0 }} 道题，可点选关联题目</p>
-         </div>
+        <!-- 右侧：题目选择面板 -->
+        <div v-if="selectedBoxIndex !== -1" class="question-selection-panel">
+          <div class="panel-header">
+            <h3>编辑框 #{{ selectedBoxIndex + 1 }} - 题目选择</h3>
+            <p>共 {{ currentPaper.questions_count || 0 }} 道题，可点选关联题目</p>
+          </div>
 
-         <div class="question-selection-controls">
-           <el-button
-             type="primary"
-             size="mini"
-             @click="selectAllQuestions"
-             :disabled="!currentPaper.questions_count"
-           >
-             全选
-           </el-button>
-           <el-button
-             type="warning"
-             size="mini"
-             class="btn-margin-left"
-             @click="deselectAllQuestions"
-             :disabled="!currentPaper.questions_count"
-           >
-             取消全选
-           </el-button>
-           <el-button
-             type="info"
-             size="mini"
-             class="btn-margin-left"
-             @click="invertQuestionSelection"
-             :disabled="!currentPaper.questions_count"
-           >
-             反选
-           </el-button>
-         </div>
+          <div class="question-selection-controls">
+            <el-button
+              type="primary"
+              size="mini"
+              :disabled="!currentPaper.questions_count"
+              @click="selectAllQuestions"
+            >
+              全选
+            </el-button>
+            <el-button
+              type="warning"
+              size="mini"
+              class="btn-margin-left"
+              :disabled="!currentPaper.questions_count"
+              @click="deselectAllQuestions"
+            >
+              取消全选
+            </el-button>
+            <el-button
+              type="info"
+              size="mini"
+              class="btn-margin-left"
+              :disabled="!currentPaper.questions_count"
+              @click="invertQuestionSelection"
+            >
+              反选
+            </el-button>
+          </div>
 
-         <div class="question-grid">
-           <div
-             v-for="i in currentPaper.questions_count"
-             :key="i"
-             class="question-item"
-             :class="{ 'selected': isQuestionSelected(i) }"
-             @click="toggleQuestionSelection(i)"
-           >
-             {{ i }}
-           </div>
-         </div>
+          <div class="question-grid">
+            <div
+              v-for="i in currentPaper.questions_count"
+              :key="i"
+              class="question-item"
+              :class="{ 'selected': isQuestionSelected(i) }"
+              @click="toggleQuestionSelection(i)"
+            >
+              {{ i }}
+            </div>
+          </div>
 
-         <div class="selected-count">
-           已选择: {{ selectedQuestions.length }} 道题
-         </div>
-       </div>
-     </div>
+          <div class="selected-count">
+            已选择: {{ selectedQuestions.length }} 道题
+          </div>
+          <h3>编辑框 #{{ selectedBoxIndex + 1 }} - 类型选择</h3>
+          <el-radio-group v-model="currentPositioningData[selectedBoxIndex].question_type">
+            <el-radio label="choice">选择</el-radio>
+            <el-radio label="tiankong">填空</el-radio>
+            <el-radio label="jieda">解答</el-radio>
+            <el-radio label="xiezuo">写作</el-radio>
+          </el-radio-group>
+        </div>
+      </div>
 
-     <div slot="footer" class="dialog-footer">
-       <el-button @click="cancelPositioningEdit">取消</el-button>
-       <el-button type="success" @click="confirmPositioningEdit">确定</el-button>
-     </div>
-   </el-dialog>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelPositioningEdit">取消</el-button>
+        <el-button type="success" @click="confirmPositioningEdit">确定</el-button>
+      </div>
+    </el-dialog>
 
     <!-- 新建试卷弹窗 -->
     <el-dialog
@@ -353,8 +363,8 @@
       :visible.sync="addDialogVisible"
       :width="dialogWidth"
       :fullscreen="isFullscreen"
-      @close="handleAddDialogClose"
       custom-class="fixed-dialog"
+      @close="handleAddDialogClose"
     >
       <el-form
         ref="addForm"
@@ -362,7 +372,7 @@
         :label-width="labelWidth"
       >
         <el-form-item label="试卷名称" required>
-          <el-input v-model="addForm.name" placeholder="请输入试卷名称"></el-input>
+          <el-input v-model="addForm.name" placeholder="请输入试卷名称" />
         </el-form-item>
         <el-form-item label="学科类型" required>
           <el-select v-model="addForm.subject" placeholder="请选择学科类型">
@@ -371,7 +381,7 @@
               :key="value"
               :label="label"
               :value="value"
-            ></el-option>
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="题目总数" required>
@@ -380,7 +390,7 @@
             placeholder="请输入题目总数"
             type="number"
             min="1"
-          ></el-input>
+          />
         </el-form-item>
         <el-form-item label="试卷">
           <el-upload
@@ -460,7 +470,7 @@
         :label-width="labelWidth"
       >
         <el-form-item label="试卷名称">
-          <el-input v-model="editForm.name" placeholder="请输入试卷名称"></el-input>
+          <el-input v-model="editForm.name" placeholder="请输入试卷名称" />
         </el-form-item>
         <el-form-item label="学科类型">
           <el-select v-model="editForm.subject" placeholder="请选择学科类型">
@@ -469,7 +479,7 @@
               :key="value"
               :label="label"
               :value="value"
-            ></el-option>
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="题目总数">
@@ -478,7 +488,7 @@
             placeholder="请输入题目总数"
             type="number"
             min="1"
-          ></el-input>
+          />
         </el-form-item>
         <el-form-item label="试卷">
           <el-upload
@@ -495,7 +505,7 @@
           >
             <div class="upload-button-group">
               <el-button slot="trigger" type="primary" size="mini">选取文件</el-button>
-              <el-button type="success" @click.stop="uploadTopicFile" size="mini">上传文件</el-button>
+              <el-button type="success" size="mini" @click.stop="uploadTopicFile">上传文件</el-button>
             </div>
             <div slot="tip" class="el-upload__tip">可选，支持上传 pdf 格式文件</div>
           </el-upload>
@@ -515,7 +525,7 @@
           >
             <div class="upload-button-group">
               <el-button slot="trigger" type="primary" size="mini">选取文件</el-button>
-              <el-button type="success" @click.stop="uploadAnswerFile" size="mini">上传文件</el-button>
+              <el-button type="success" size="mini" @click.stop="uploadAnswerFile">上传文件</el-button>
             </div>
             <div slot="tip" class="el-upload__tip">可选，支持上传 pdf 格式文件</div>
           </el-upload>
@@ -535,7 +545,7 @@
           >
             <div class="upload-button-group">
               <el-button slot="trigger" type="primary" size="mini">选取文件</el-button>
-              <el-button type="success" @click.stop="uploadStandardFile" size="mini">上传文件</el-button>
+              <el-button type="success" size="mini" @click.stop="uploadStandardFile">上传文件</el-button>
             </div>
             <div slot="tip" class="el-upload__tip">可选，支持上传 pdf 格式文件</div>
           </el-upload>
@@ -624,11 +634,11 @@ export default {
       },
       // 存储上传的文件对象
       uploadedFiles: {
-        topic: null,    // 试卷文件
-        answer: null,   // 答题卡文件
+        topic: null, // 试卷文件
+        answer: null, // 答题卡文件
         standard: null, // 参考答案文件
-        image1: null,   // 答题卡图片1
-        image2: null    // 答题卡图片2
+        image1: null, // 答题卡图片1
+        image2: null // 答题卡图片2
       },
       topicPaperFileList: [],
       answerCardFileList: [],
@@ -651,16 +661,16 @@ export default {
       addAnswerImage2FileList: [],
 
       SUBJECT_TYPES: {
-        chinese: "语文",
-        math: "数学",
-        english: "英语",
-        physics: "物理",
-        chemistry: "化学",
-        biology: "生物",
-        history: "历史",
-        geography: "地理",
-        politics: "政治",
-        science: "科学"
+        chinese: '语文',
+        math: '数学',
+        english: '英语',
+        physics: '物理',
+        chemistry: '化学',
+        biology: '生物',
+        history: '历史',
+        geography: '地理',
+        politics: '政治',
+        science: '科学'
       },
       dialogWidth: '80vw',
       isFullscreen: false,
@@ -678,9 +688,12 @@ export default {
     // 获取当前选中编辑框的题目列表
     selectedQuestions() {
       if (this.selectedBoxIndex === -1 || !this.currentPositioningData[this.selectedBoxIndex]) {
-        return [];
+        return []
       }
-      return this.currentPositioningData[this.selectedBoxIndex].questions_list || [];
+      return this.currentPositioningData[this.selectedBoxIndex].questions_list || []
+    },
+    selectedType() {
+      return this.currentPositioningData[this.selectedBoxIndex].question_type
     }
   },
   async created() {
@@ -714,68 +727,68 @@ export default {
           type: 'warning'
         }).then(() => {
           // 确认取消，关闭弹窗并重置状态
-          this.positioningDialogVisible = false;
-          this.editingPositioningType = '';
-          this.selectedBoxIndex = -1;
+          this.positioningDialogVisible = false
+          this.editingPositioningType = ''
+          this.selectedBoxIndex = -1
         }).catch(() => {
           // 取消操作，留在当前弹窗
-        });
+        })
       } else {
         // 没有更改，直接关闭弹窗
-        this.positioningDialogVisible = false;
-        this.editingPositioningType = '';
-        this.selectedBoxIndex = -1;
+        this.positioningDialogVisible = false
+        this.editingPositioningType = ''
+        this.selectedBoxIndex = -1
       }
     },
     handleFileExceed(files, fileList) {
-          this.$message.warning(`只能选择一个文件!`);
-        },
+      this.$message.warning(`只能选择一个文件!`)
+    },
     onImgLoaded() {
       // 强制重新计算滚动区域和图片尺寸
       this.$nextTick(() => {
-        const box = this.$refs.scrollBox;
-        const img = this.$refs.oriImg.$el.querySelector('img');
-        const canvas = this.$refs.imageCanvas;
-        const wrapper = this.$refs.imageWrapper;
+        const box = this.$refs.scrollBox
+        const img = this.$refs.oriImg.$el.querySelector('img')
+        const canvas = this.$refs.imageCanvas
+        const wrapper = this.$refs.imageWrapper
 
         if (box && img) {
           // 清除图片可能存在的变换
-          img.style.transform = 'none';
-          img.style.objectFit = 'none';
+          img.style.transform = 'none'
+          img.style.objectFit = 'none'
 
           // 记录图片原始尺寸
-          const naturalWidth = img.naturalWidth;
-          const naturalHeight = img.naturalHeight;
+          const naturalWidth = img.naturalWidth
+          const naturalHeight = img.naturalHeight
 
           // 强制设置图片尺寸为原始尺寸
-          img.style.width = `${naturalWidth}px`;
-          img.style.height = `${naturalHeight}px`;
+          img.style.width = `${naturalWidth}px`
+          img.style.height = `${naturalHeight}px`
 
           // 确保包装器尺寸与图片一致
           if (wrapper) {
-            wrapper.style.width = `${naturalWidth}px`;
-            wrapper.style.height = `${naturalHeight}px`;
+            wrapper.style.width = `${naturalWidth}px`
+            wrapper.style.height = `${naturalHeight}px`
           }
 
           // 同步画布尺寸与图片尺寸
           if (canvas && typeof canvas.setSize === 'function') {
-            canvas.setSize(naturalWidth, naturalHeight);
+            canvas.setSize(naturalWidth, naturalHeight)
           }
 
           // 触发容器重绘，确保滚动区域正确计算
-          box.style.display = 'none';
-          box.offsetHeight; // 触发重排
-          box.style.display = 'block';
+          box.style.display = 'none'
+          box.offsetHeight // 触发重排
+          box.style.display = 'block'
 
           // 强制滚动到左上角
-          box.scrollTop = 0;
-          box.scrollLeft = 0;
+          box.scrollTop = 0
+          box.scrollLeft = 0
 
           // 确保没有其他样式影响
-          box.style.padding = '0';
-          box.style.margin = '0';
+          box.style.padding = '0'
+          box.style.margin = '0'
         }
-      });
+      })
     },
     handleResize() {
       const windowWidth = window.innerWidth
@@ -795,10 +808,10 @@ export default {
     },
     async fetchTestPapers() {
       try {
-        const examId = this.$route.params.id;
+        const examId = this.$route.params.id
         if (!examId) {
-          this.$message.warning('未找到考试ID参数');
-          return;
+          this.$message.warning('未找到考试ID参数')
+          return
         }
 
         const token = Cookies.get('access')
@@ -821,7 +834,7 @@ export default {
       }
     },
     getSubjectName(subjectKey) {
-      return this.SUBJECT_TYPES[subjectKey] || '未知科目';
+      return this.SUBJECT_TYPES[subjectKey] || '未知科目'
     },
     downloadFile(fileUrl, chineseFileName) {
       if (!fileUrl) {
@@ -830,11 +843,11 @@ export default {
       }
       const urlParts = fileUrl.split('.')
       const ext = urlParts.length > 1 ? urlParts.pop() : ''
-      const fullFileName = ext ? `${chineseFileName}.${ext}` : chineseFileName;
+      const fullFileName = ext ? `${chineseFileName}.${ext}` : chineseFileName
       const link = document.createElement('a')
-      link.href = fileUrl;
-      link.target = '_blank';
-      link.download = fullFileName;
+      link.href = fileUrl
+      link.target = '_blank'
+      link.download = fullFileName
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -842,25 +855,27 @@ export default {
     // 查看详情
     handleViewDetails(paper) {
       // 确保定位数据存在，如不存在则初始化
-      if (!paper.positioning1) paper.positioning1 = [];
-      if (!paper.positioning1_enabled) paper.positioning1_enabled = false;
-      if (!paper.positioning2) paper.positioning2 = [];
-      if (!paper.positioning2_enabled) paper.positioning2_enabled = false;
+      if (!paper.positioning1) paper.positioning1 = []
+      if (!paper.positioning1_enabled) paper.positioning1_enabled = false
+      if (!paper.positioning2) paper.positioning2 = []
+      if (!paper.positioning2_enabled) paper.positioning2_enabled = false
       // 确保题目列表存在
       paper.positioning1.forEach(box => {
-        if (!box.questions_list) box.questions_list = [];
-      });
+        if (!box.questions_list) box.questions_list = []
+        box.question_type = box.question_type || ''
+      })
       paper.positioning2.forEach(box => {
-        if (!box.questions_list) box.questions_list = [];
-      });
+        if (!box.questions_list) box.questions_list = []
+        box.question_type = box.question_type || ''
+      })
 
-      this.currentPaper = { ...paper };
-      this.detailDialogVisible = true;
+      this.currentPaper = { ...paper }
+      this.detailDialogVisible = true
     },
     // 从详情弹窗进入编辑
     handleEditFromDetail() {
-      this.detailDialogVisible = false;
-      this.handleEdit(this.currentPaper);
+      this.detailDialogVisible = false
+      this.handleEdit(this.currentPaper)
     },
     handleEdit(paper) {
       // 重置上传文件对象
@@ -923,13 +938,13 @@ export default {
 
         if (fileNameParam) {
           return [{
-              name: decodeURIComponent(fileNameParam),
-              url: fileUrl,
-              status: 'success'
-            }]
+            name: decodeURIComponent(fileNameParam),
+            url: fileUrl,
+            status: 'success'
+          }]
         } else {
           const pathParts = url.pathname.split('/')
-          let fileName = pathParts.pop() || defaultName
+          const fileName = pathParts.pop() || defaultName
           return [{
             name: decodeURIComponent(fileName),
             url: fileUrl,
@@ -948,7 +963,7 @@ export default {
       this.$confirm('此操作将永久删除该试卷, 是否继续?', '提示', {
         type: 'warning'
       })
-        .then(async () => {
+        .then(async() => {
           try {
             const token = Cookies.get('access')
             await request({
@@ -972,21 +987,20 @@ export default {
       this.$message.info(`预览文件：${file.name}`)
     },
 
-
     // 编辑文件变化处理
     handleFileChange(type, file, fileList) {
       console.log(file)
       console.log(fileList)
       // 始终保留最后一个有效的文件（过滤已移除的文件）
-      const validFiles = (fileList || []).filter(f => f.status !== 'removed');
+      const validFiles = (fileList || []).filter(f => f.status !== 'removed')
 
       if (validFiles.length > 0) {
         // 优先取 raw 文件（el-upload 中用户选择的原始文件）
-        this.uploadedFiles[type] = validFiles[validFiles.length - 1].raw;
-        console.log(`文件已选择: ${validFiles[validFiles.length - 1].name}`);
+        this.uploadedFiles[type] = validFiles[validFiles.length - 1].raw
+        console.log(`文件已选择: ${validFiles[validFiles.length - 1].name}`)
       } else {
-        this.uploadedFiles[type] = null;
-        console.log('文件已移除');
+        this.uploadedFiles[type] = null
+        console.log('文件已移除')
       }
 
       // 更新文件列表显示
@@ -997,9 +1011,8 @@ export default {
         image1: 'answerImage1FileList',
         image2: 'answerImage2FileList'
       }
-      this[fileListMap[type]] = [...fileList];
+      this[fileListMap[type]] = [...fileList]
     },
-
 
     handleAddFileChange(type, file, fileList) {
       console.log(567)
@@ -1012,193 +1025,193 @@ export default {
       this[fileListMap[type]] = [...fileList]
 
       if (fileList.length > 0 && file.raw) {
-        this.addUploadedFiles[type] = file.raw;
+        this.addUploadedFiles[type] = file.raw
       } else {
-        this.addUploadedFiles[type] = null;
+        this.addUploadedFiles[type] = null
       }
     },
 
     // 文档上传前验证
     beforeUpload(file) {
       console.log(123)
-      const fileExtensions = ['doc', 'docx', 'pdf'];
-      const ext = file.name.split('.').pop().toLowerCase();
+      const fileExtensions = ['doc', 'docx', 'pdf']
+      const ext = file.name.split('.').pop().toLowerCase()
       if (!fileExtensions.includes(ext)) {
-        this.$message.error('只支持上传 doc、docx、pdf 格式的文件');
-        return false;
+        this.$message.error('只支持上传 doc、docx、pdf 格式的文件')
+        return false
       }
 
       // 限制文件大小为10MB
-      const maxSize = 10 * 1024 * 1024;
+      const maxSize = 10 * 1024 * 1024
       if (file.size > maxSize) {
-        this.$message.error('文件大小不能超过10MB');
-        return false;
+        this.$message.error('文件大小不能超过10MB')
+        return false
       }
 
-      return true;
+      return true
     },
 
     // 上传试卷文件
     async uploadTopicFile() {
-      console.log('尝试上传试卷文件:', this.uploadedFiles.topic);
+      console.log('尝试上传试卷文件:', this.uploadedFiles.topic)
 
       // 直接从文件列表获取文件作为备选方案
-      const validFile = this.topicPaperFileList.find(f => f.status !== 'removed');
-      const fileToUpload = this.uploadedFiles.topic || (validFile ? validFile.raw : null);
+      const validFile = this.topicPaperFileList.find(f => f.status !== 'removed')
+      const fileToUpload = this.uploadedFiles.topic || (validFile ? validFile.raw : null)
 
       if (!fileToUpload) {
-        this.$message.warning('请先选择要上传的试卷文件');
-        return;
+        this.$message.warning('请先选择要上传的试卷文件')
+        return
       }
 
       try {
-        const token = Cookies.get('access');
-        const formData = new FormData();
-        formData.append('topic_paper_file', fileToUpload);
+        const token = Cookies.get('access')
+        const formData = new FormData()
+        formData.append('topic_paper_file', fileToUpload)
 
         const res = await request({
           url: `/sexam/testpapers/${this.editForm.id}/`,
           method: 'patch',
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`
           },
           data: formData
-        });
+        })
 
-        this.$message.success('试卷文件上传成功');
-        this.editForm.topic_paper_file = res.topic_paper_file;
-        this.topicPaperFileList = this.parseFileInfo(res.topic_paper_file, '试卷');
-        this.uploadedFiles.topic = null;
-        await this.fetchTestPapers();
+        this.$message.success('试卷文件上传成功')
+        this.editForm.topic_paper_file = res.topic_paper_file
+        this.topicPaperFileList = this.parseFileInfo(res.topic_paper_file, '试卷')
+        this.uploadedFiles.topic = null
+        await this.fetchTestPapers()
       } catch (error) {
-        console.error('上传试卷文件失败：', error);
-        this.$message.error('上传试卷文件失败，请稍后重试');
+        console.error('上传试卷文件失败：', error)
+        this.$message.error('上传试卷文件失败，请稍后重试')
       } finally {
-        this.$message.closeAll();
+        this.$message.closeAll()
       }
     },
 
     // 上传答题卡文件
     async uploadAnswerFile() {
-      console.log('尝试上传答题卡文件:', this.uploadedFiles.answer);
+      console.log('尝试上传答题卡文件:', this.uploadedFiles.answer)
 
       // 直接从文件列表获取文件作为备选方案
-      const validFile = this.answerCardFileList.find(f => f.status !== 'removed');
-      const fileToUpload = this.uploadedFiles.answer || (validFile ? validFile.raw : null);
+      const validFile = this.answerCardFileList.find(f => f.status !== 'removed')
+      const fileToUpload = this.uploadedFiles.answer || (validFile ? validFile.raw : null)
 
       if (!fileToUpload) {
-        this.$message.warning('请先选择要上传的答题卡文件');
-        return;
+        this.$message.warning('请先选择要上传的答题卡文件')
+        return
       }
 
       try {
-        const token = Cookies.get('access');
-        const formData = new FormData();
-        formData.append('answers_parse_file', fileToUpload);
+        const token = Cookies.get('access')
+        const formData = new FormData()
+        formData.append('answers_parse_file', fileToUpload)
 
         const res = await request({
           url: `/sexam/testpapers/${this.editForm.id}/`,
           method: 'patch',
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`
           },
           data: formData
-        });
+        })
 
-        this.$message.success('答题卡文件上传成功');
-        this.editForm.answers_parse_file = res.answers_parse_file;
-        this.answerCardFileList = this.parseFileInfo(res.answers_parse_file, '答题卡');
-        this.uploadedFiles.answer = null;
-        await this.fetchTestPapers();
+        this.$message.success('答题卡文件上传成功')
+        this.editForm.answers_parse_file = res.answers_parse_file
+        this.answerCardFileList = this.parseFileInfo(res.answers_parse_file, '答题卡')
+        this.uploadedFiles.answer = null
+        await this.fetchTestPapers()
       } catch (error) {
-        console.error('上传答题卡文件失败：', error);
-        this.$message.error('上传答题卡文件失败，请稍后重试');
+        console.error('上传答题卡文件失败：', error)
+        this.$message.error('上传答题卡文件失败，请稍后重试')
       } finally {
-        this.$message.closeAll();
+        this.$message.closeAll()
       }
     },
 
     // 上传参考答案文件
     async uploadStandardFile() {
-      console.log('尝试上传参考答案文件:', this.uploadedFiles.standard);
+      console.log('尝试上传参考答案文件:', this.uploadedFiles.standard)
 
       // 直接从文件列表获取文件作为备选方案
-      const validFile = this.standardAnswerFileList.find(f => f.status !== 'removed');
-      const fileToUpload = this.uploadedFiles.standard || (validFile ? validFile.raw : null);
+      const validFile = this.standardAnswerFileList.find(f => f.status !== 'removed')
+      const fileToUpload = this.uploadedFiles.standard || (validFile ? validFile.raw : null)
 
       if (!fileToUpload) {
-        this.$message.warning('请先选择要上传的参考答案文件');
-        return;
+        this.$message.warning('请先选择要上传的参考答案文件')
+        return
       }
 
       try {
-        const token = Cookies.get('access');
-        const formData = new FormData();
-        formData.append('standard_answer_file', fileToUpload);
+        const token = Cookies.get('access')
+        const formData = new FormData()
+        formData.append('standard_answer_file', fileToUpload)
 
         const res = await request({
           url: `/sexam/testpapers/${this.editForm.id}/`,
           method: 'patch',
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`
           },
           data: formData
-        });
+        })
 
-        this.$message.success('参考答案文件上传成功');
-        this.editForm.standard_answer_file = res.standard_answer_file;
-        this.standardAnswerFileList = this.parseFileInfo(res.standard_answer_file, '参考答案');
-        this.uploadedFiles.standard = null;
-        await this.fetchTestPapers();
+        this.$message.success('参考答案文件上传成功')
+        this.editForm.standard_answer_file = res.standard_answer_file
+        this.standardAnswerFileList = this.parseFileInfo(res.standard_answer_file, '参考答案')
+        this.uploadedFiles.standard = null
+        await this.fetchTestPapers()
       } catch (error) {
-        console.error('上传参考答案文件失败：', error);
-        this.$message.error('上传参考答案文件失败，请稍后重试');
+        console.error('上传参考答案文件失败：', error)
+        this.$message.error('上传参考答案文件失败，请稍后重试')
       } finally {
-        this.$message.closeAll();
+        this.$message.closeAll()
       }
     },
 
     async handleEditSubmit() {
       // 验证必填项
       if (!this.editForm.name) {
-        this.$message.error('请输入试卷名称');
-        return;
+        this.$message.error('请输入试卷名称')
+        return
       }
 
       if (!this.editForm.subject) {
-        this.$message.error('请选择学科类型');
-        return;
+        this.$message.error('请选择学科类型')
+        return
       }
 
       if (!this.editForm.questions_count || this.editForm.questions_count < 1) {
-        this.$message.error('请输入有效的题目总数');
-        return;
+        this.$message.error('请输入有效的题目总数')
+        return
       }
 
       try {
-        const token = Cookies.get('access');
-        const formData = new FormData();
+        const token = Cookies.get('access')
+        const formData = new FormData()
         // 只修改试卷名称和学科类型
-        formData.append('name', this.editForm.name);
-        formData.append('subject', this.editForm.subject);
-        formData.append('exam', this.$route.params.id);
-        formData.append('questions_count', this.editForm.questions_count);
+        formData.append('name', this.editForm.name)
+        formData.append('subject', this.editForm.subject)
+        formData.append('exam', this.$route.params.id)
+        formData.append('questions_count', this.editForm.questions_count)
 
         await request({
           url: `/sexam/testpapers/${this.editForm.id}/`,
           method: 'patch',
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`
           },
           data: formData
-        });
+        })
 
-        this.$message.success('编辑成功');
-        this.editDialogVisible = false;
-        await this.fetchTestPapers();
+        this.$message.success('编辑成功')
+        this.editDialogVisible = false
+        await this.fetchTestPapers()
       } catch (error) {
-        console.error('编辑试卷失败：', error);
-        this.$message.error('编辑失败，请稍后重试');
+        console.error('编辑试卷失败：', error)
+        this.$message.error('编辑失败，请稍后重试')
       }
     },
 
@@ -1259,8 +1272,7 @@ export default {
         return
       }
 
-
-    try {
+      try {
         const token = Cookies.get('access')
         const formData = new FormData()
         formData.append('name', this.addForm.name)
@@ -1276,15 +1288,14 @@ export default {
 
         // 添加文件到formData
         if (this.addUploadedFiles.topic) {
-          formData.append('topic_paper_file', this.addUploadedFiles.topic);
+          formData.append('topic_paper_file', this.addUploadedFiles.topic)
         }
         if (this.addUploadedFiles.answer) {
-          formData.append('answers_parse_file', this.addUploadedFiles.answer);
+          formData.append('answers_parse_file', this.addUploadedFiles.answer)
         }
         if (this.addUploadedFiles.standard) {
-          formData.append('standard_answer_file', this.addUploadedFiles.standard);
+          formData.append('standard_answer_file', this.addUploadedFiles.standard)
         }
-
 
         await request({
           url: '/sexam/testpapers/',
@@ -1307,58 +1318,59 @@ export default {
 
     // 打开定位编辑弹窗
     openPositioningDialog(type) {
-      this.editingPositioningType = type;
+      this.editingPositioningType = type
       // 根据类型设置对应的图片和定位数据
       this.currentPositioningImage = type === 'positioning1'
         ? this.currentPaper.answers_parse_image_file1
-        : this.currentPaper.answers_parse_image_file2;
+        : this.currentPaper.answers_parse_image_file2
 
       // 保存当前定位数据的副本，用于编辑
-      this.currentPositioningData = JSON.parse(JSON.stringify(this.currentPaper[type] || []));
+      this.currentPositioningData = JSON.parse(JSON.stringify(this.currentPaper[type] || []))
       // 确保每个编辑框都有questions_list属性
       this.currentPositioningData.forEach(box => {
         if (!box.questions_list) {
-          box.questions_list = [];
+          box.questions_list = []
         }
-      });
-      this.tempPositioningData = JSON.parse(JSON.stringify(this.currentPositioningData));
-      this.selectedBoxIndex = -1; // 重置选中状态
+        box.question_type = box.question_type || ''
+      })
+      this.tempPositioningData = JSON.parse(JSON.stringify(this.currentPositioningData))
+      this.selectedBoxIndex = -1 // 重置选中状态
 
       // 打开弹窗
-      this.positioningDialogVisible = true;
+      this.positioningDialogVisible = true
 
       // 确保弹窗打开后正确初始化滚动位置
       this.$nextTick(() => {
-        const box = this.$refs.scrollBox;
+        const box = this.$refs.scrollBox
         if (box) {
-          box.scrollTop = 0;
-          box.scrollLeft = 0;
+          box.scrollTop = 0
+          box.scrollLeft = 0
         }
-      });
+      })
     },
 
     // 处理编辑框选中事件
     onBoxSelected(index) {
-      this.selectedBoxIndex = index;
+      this.selectedBoxIndex = index
     },
 
     // 处理编辑框取消选中事件
     onBoxDeselected() {
-      this.selectedBoxIndex = -1;
+      this.selectedBoxIndex = -1
     },
 
     // 添加新的编辑框
     addNewBox() {
-      const img = this.$refs.oriImg.$el.querySelector('img');
-      if (!img) return;
+      const img = this.$refs.oriImg.$el.querySelector('img')
+      if (!img) return
 
       // 获取图片尺寸
-      const imgWidth = img.naturalWidth || img.offsetWidth;
-      const imgHeight = img.naturalHeight || img.offsetHeight;
+      const imgWidth = img.naturalWidth || img.offsetWidth
+      const imgHeight = img.naturalHeight || img.offsetHeight
 
       // 在图片中心创建一个默认大小为200x100的编辑框
-      const defaultWidth = 200;
-      const defaultHeight = 100;
+      const defaultWidth = 200
+      const defaultHeight = 100
 
       const newBox = {
         x: Math.max(0, (imgWidth - defaultWidth) / 2),
@@ -1367,34 +1379,35 @@ export default {
         height: defaultHeight,
         // 初始化空的题目列表
         questions_list: [],
-        name: `框${this.currentPositioningData.length + 1}`
-      };
+        name: `框${this.currentPositioningData.length + 1}`,
+        question_type: ''
+      }
 
       // 添加新框到定位数据
-      this.currentPositioningData.push(newBox);
+      this.currentPositioningData.push(newBox)
       // 选中新添加的框
-      this.selectedBoxIndex = this.currentPositioningData.length - 1;
+      this.selectedBoxIndex = this.currentPositioningData.length - 1
 
       // 通知画布更新
-      this.$refs.imageCanvas.updateCanvas();
+      this.$refs.imageCanvas.updateCanvas()
     },
 
     // 删除选中的编辑框
     deleteSelectedBox() {
       if (this.selectedBoxIndex === -1 || this.selectedBoxIndex >= this.currentPositioningData.length) {
-        this.$message.warning('请先选择要删除的编辑框');
-        return;
+        this.$message.warning('请先选择要删除的编辑框')
+        return
       }
 
       // 删除选中的框
-      this.currentPositioningData.splice(this.selectedBoxIndex, 1);
+      this.currentPositioningData.splice(this.selectedBoxIndex, 1)
       // 重置选中状态
-      this.selectedBoxIndex = -1;
+      this.selectedBoxIndex = -1
 
       // 通知画布更新
-      this.$refs.imageCanvas.updateCanvas();
+      this.$refs.imageCanvas.updateCanvas()
 
-      this.$message.success('编辑框已删除');
+      this.$message.success('编辑框已删除')
     },
 
     // 重置定位数据
@@ -1405,120 +1418,120 @@ export default {
         type: 'warning'
       }).then(() => {
         // 恢复到初始状态
-        this.currentPositioningData = JSON.parse(JSON.stringify(this.tempPositioningData));
-        this.selectedBoxIndex = -1;
-        this.$refs.imageCanvas.updateCanvas();
-        this.$message.success('已重置所有编辑框');
+        this.currentPositioningData = JSON.parse(JSON.stringify(this.tempPositioningData))
+        this.selectedBoxIndex = -1
+        this.$refs.imageCanvas.updateCanvas()
+        this.$message.success('已重置所有编辑框')
       }).catch(() => {
         // 取消重置
-      });
+      })
     },
 
     // 确认定位编辑
     confirmPositioningEdit() {
       // 保存定位数据到当前试卷对象
-      this.currentPaper[this.editingPositioningType] = this.currentPositioningData;
+      this.currentPaper[this.editingPositioningType] = this.currentPositioningData
       // 标记为已确认
-      this.currentPaper[`${this.editingPositioningType}_enabled`] = true;
+      this.currentPaper[`${this.editingPositioningType}_enabled`] = true
       // 保存到服务器
-      this.savePositioningToServer();
-      this.positioningDialogVisible = false;
-      this.editingPositioningType = '';
-      this.selectedBoxIndex = -1;
+      this.savePositioningToServer()
+      this.positioningDialogVisible = false
+      this.editingPositioningType = ''
+      this.selectedBoxIndex = -1
     },
 
     async savePositioningToServer() {
       try {
-        const token = Cookies.get('access');
-        const formData = new FormData();
+        const token = Cookies.get('access')
+        const formData = new FormData()
 
         // 仅提交定位相关数据
-        formData.append('positioning1', JSON.stringify(this.currentPaper.positioning1 || []));
-        formData.append('positioning1_enabled', this.currentPaper.positioning1_enabled || false);
-        formData.append('positioning2', JSON.stringify(this.currentPaper.positioning2 || []));
-        formData.append('positioning2_enabled', this.currentPaper.positioning2_enabled || false);
+        formData.append('positioning1', JSON.stringify(this.currentPaper.positioning1 || []))
+        formData.append('positioning1_enabled', this.currentPaper.positioning1_enabled || false)
+        formData.append('positioning2', JSON.stringify(this.currentPaper.positioning2 || []))
+        formData.append('positioning2_enabled', this.currentPaper.positioning2_enabled || false)
 
         // 其他必要字段
-        formData.append('name', this.currentPaper.name);
-        formData.append('subject', this.currentPaper.subject);
-        formData.append('exam', this.$route.params.id);
-        formData.append('questions_count', this.currentPaper.questions_count || 0);
+        formData.append('name', this.currentPaper.name)
+        formData.append('subject', this.currentPaper.subject)
+        formData.append('exam', this.$route.params.id)
+        formData.append('questions_count', this.currentPaper.questions_count || 0)
 
         await request({
           url: `/sexam/testpapers/${this.currentPaper.id}/`,
           method: 'patch',
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`
           },
           data: formData
-        });
+        })
 
-        this.$message.success('定位数据保存成功');
-        await this.fetchTestPapers();
+        this.$message.success('定位数据保存成功')
+        await this.fetchTestPapers()
       } catch (error) {
-        console.error('保存定位数据失败：', error);
-        this.$message.error('保存定位数据失败，请稍后重试');
+        console.error('保存定位数据失败：', error)
+        this.$message.error('保存定位数据失败，请稍后重试')
       }
     },
 
     // 题目选择相关方法
     isQuestionSelected(questionNumber) {
-      return this.selectedQuestions.includes(questionNumber);
+      return this.selectedQuestions.includes(questionNumber)
     },
 
     toggleQuestionSelection(questionNumber) {
-      if (!this.currentPositioningData[this.selectedBoxIndex]) return;
+      if (!this.currentPositioningData[this.selectedBoxIndex]) return
 
       // 确保questions_list存在
       if (!this.currentPositioningData[this.selectedBoxIndex].questions_list) {
-        this.currentPositioningData[this.selectedBoxIndex].questions_list = [];
+        this.currentPositioningData[this.selectedBoxIndex].questions_list = []
       }
 
-      const index = this.currentPositioningData[this.selectedBoxIndex].questions_list.indexOf(questionNumber);
+      const index = this.currentPositioningData[this.selectedBoxIndex].questions_list.indexOf(questionNumber)
 
       if (index === -1) {
         // 添加题目
-        this.currentPositioningData[this.selectedBoxIndex].questions_list.push(questionNumber);
+        this.currentPositioningData[this.selectedBoxIndex].questions_list.push(questionNumber)
         // 保持数组有序
-        this.currentPositioningData[this.selectedBoxIndex].questions_list.sort((a, b) => a - b);
+        this.currentPositioningData[this.selectedBoxIndex].questions_list.sort((a, b) => a - b)
       } else {
         // 移除题目
-        this.currentPositioningData[this.selectedBoxIndex].questions_list.splice(index, 1);
+        this.currentPositioningData[this.selectedBoxIndex].questions_list.splice(index, 1)
       }
     },
 
     selectAllQuestions() {
-      if (!this.currentPositioningData[this.selectedBoxIndex] || !this.currentPaper.questions_count) return;
+      if (!this.currentPositioningData[this.selectedBoxIndex] || !this.currentPaper.questions_count) return
 
       // 选择所有题目
       this.currentPositioningData[this.selectedBoxIndex].questions_list = Array.from(
         { length: this.currentPaper.questions_count },
         (_, i) => i + 1
-      );
+      )
     },
 
     deselectAllQuestions() {
-      if (!this.currentPositioningData[this.selectedBoxIndex]) return;
+      if (!this.currentPositioningData[this.selectedBoxIndex]) return
 
       // 取消选择所有题目
-      this.currentPositioningData[this.selectedBoxIndex].questions_list = [];
+      this.currentPositioningData[this.selectedBoxIndex].questions_list = []
     },
 
     invertQuestionSelection() {
-      if (!this.currentPositioningData[this.selectedBoxIndex] || !this.currentPaper.questions_count) return;
+      if (!this.currentPositioningData[this.selectedBoxIndex] || !this.currentPaper.questions_count) return
 
       // 获取当前已选择的题目
-      const currentSelected = new Set(this.currentPositioningData[this.selectedBoxIndex].questions_list);
+      const currentSelected = new Set(this.currentPositioningData[this.selectedBoxIndex].questions_list)
       // 计算反选后的题目列表
-      const invertedSelection = [];
+      const invertedSelection = []
 
       for (let i = 1; i <= this.currentPaper.questions_count; i++) {
         if (!currentSelected.has(i)) {
-          invertedSelection.push(i);
+          invertedSelection.push(i)
         }
       }
 
-      this.currentPositioningData[this.selectedBoxIndex].questions_list = invertedSelection;
+      this.currentPositioningData[this.selectedBoxIndex].questions_list = invertedSelection
     },
 
     handleUpload(paper) {
